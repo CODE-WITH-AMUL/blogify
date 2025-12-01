@@ -36,8 +36,22 @@ INSTALLED_APPS = [
 
 
 EXTRA_APPS = [
-    'core',
+    # 'core',
+    'rest_framework',
+    'corsheaders', 
 ]
+
+
+INSTALLED_APPS += EXTRA_APPS
+
+
+#-------------------[CROSS SITES]-------------------#
+CORS_ALLOWED_ORIGINS = env.list(
+    'CORS_ALLOWED_ORIGINS_KEY'
+)
+
+CORS_ALLOW_ALL_ORIGINS = env(' CORS_ALLOW_ALL_ORIGINS_KEY')
+CORS_ALLOW_CREDENTIALS = env('CORS_ALLOW_CREDENTIALS_KEY')
 
 #-------------------[MIDDLEWARE MODULES]-------------------#
 
@@ -51,6 +65,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+MIDDLEWARE_EXTRA = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",  # Keep this
+    ...
+]
+
+MIDDLEWARE += MIDDLEWARE_EXTRA
 
 #-------------------[REST APIS ]-------------------#
 
