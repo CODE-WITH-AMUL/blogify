@@ -6,7 +6,7 @@ from .models import Blog_Post, Category_Types, Tag_Types, Search
 #---------------------[BLOG POST ADMIN]---------------------#
 @admin.register(Blog_Post)
 class BlogPostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'created_at', 'updated_at')
+    list_display = ('title', 'author','featured_article', 'category', 'created_at', 'updated_at')
     list_filter = ('category', 'tag', 'created_at')
     search_fields = ('title', 'content', 'author')
     prepopulated_fields = {'slug': ('title',)}

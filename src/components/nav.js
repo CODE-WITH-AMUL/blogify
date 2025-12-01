@@ -1,185 +1,139 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import React, { useState } from 'react';
+import { Search, User, Menu, X } from 'lucide-react';
 
-function Navbar() {
+const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
-  
-  const navItems = [
-    { name: "Home", link: "/" },
-    { name: "About", link: "/about" },
-    { 
-      name: "Blog", 
-      link: "/blog",
-      submenu: [
-        { name: "All Posts", link: "/blog" },
-        { name: "Popular", link: "/blog/popular" },
-        { name: "Categories", link: "/blog/categories" },
-      ]
-    },
-    { name: "Contact", link: "/contact" },
-  ];
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const location = useLocation();
-
-  const handleMouseEnter = (itemName) => {
-    setHoveredItem(itemName);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    console.log('Searching for:', searchQuery);
   };
 
-  const handleMouseLeave = () => {
-    setHoveredItem(null);
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
     <>
       <nav className="navbar">
-        <div className="navbar-container">
-          {/* Logo with animation */}
-          <div className="navbar-logo">
-            <Link to="/">
-              <span className="logo-text">Blogify</span>
-              <span className="logo-dot">.</span>
-            </Link>
+        <div className="nav-container">
+          {/* Logo */}
+          <div className="logo">
+            <span className="logo-main">CodeWithAmul</span>
           </div>
 
-          {/* Desktop Menu */}
-          <ul className="navbar-menu">
-            {navItems.map((item) => (
-              <li
-                key={item.name}
-                className={`navbar-item ${
-                  location.pathname === item.link ? "active" : ""
-                } ${hoveredItem === item.name ? "hovered" : ""}`}
-                onMouseEnter={() => handleMouseEnter(item.name)}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Link to={item.link} className="navbar-link">
-                  {item.name}
-                  {item.submenu && (
-                    <ChevronDown size={16} className="dropdown-icon" />
-                  )}
-                </Link>
-                
-                {/* Submenu Dropdown */}
-                {item.submenu && hoveredItem === item.name && (
-                  <div className="submenu">
-                    {item.submenu.map((subItem) => (
-                      <Link
-                        key={subItem.name}
-                        to={subItem.link}
-                        className="submenu-item"
-                      >
-                        {subItem.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
+          {/* Search Bar */}
+          <div className="search-container">
+            <form onSubmit={handleSearch} className="search-form">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                placeholder="Search articles, tutorials, guides..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </form>
+          </div>
+
+          {/* Desktop Navigation */}
+          <ul className="nav-menu">
+            <li><a href="#home" className="nav-link active">Home</a></li>
+            <li><a href="#blog" className="nav-link">Blog</a></li>
+            <li><a href="#tutorials" className="nav-link">Tutorials</a></li>
+            <li><a href="#projects" className="nav-link">Projects</a></li>
+            <li><a href="#about" className="nav-link">About</a></li>
+            <li><a href="#contact" className="nav-link">Contact</a></li>
           </ul>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="mobile-menu-button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
+          {/* User Actions */}
+          <div className="nav-actions">
+            <button className="btn-login">
+              <User size={18} />
+              <span>Login</span>
+            </button>
+            <button className="btn-primary">Get Started</button>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button className="mobile-menu-toggle" onClick={toggleMenu}>
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
+        </div>
 
-          {/* Call to Action Button */}
-          <Link to="/subscribe" className="cta-button">
-            Subscribe
-          </Link>
+        {/* Mobile Menu */}
+        <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}>
+          <div className="mobile-search">
+            <form onSubmit={handleSearch} className="mobile-search-form">
+              <Search size={20} />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </form>
+          </div>
+          
+          <ul className="mobile-nav-menu">
+            <li><a href="#home" className="mobile-nav-link active">Home</a></li>
+            <li><a href="#blog" className="mobile-nav-link">Blog</a></li>
+            <li><a href="#tutorials" className="mobile-nav-link">Tutorials</a></li>
+            <li><a href="#projects" className="mobile-nav-link">Projects</a></li>
+            <li><a href="#about" className="mobile-nav-link">About</a></li>
+            <li><a href="#contact" className="mobile-nav-link">Contact</a></li>
+          </ul>
+
+          <div className="mobile-actions">
+            <button className="btn-login-mobile">
+              <User size={18} />
+              <span>Login</span>
+            </button>
+            <button className="btn-primary-mobile">Get Started</button>
+          </div>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      <div className={`mobile-menu ${isMenuOpen ? "open" : ""}`}>
-        <ul className="mobile-menu-list">
-          {navItems.map((item) => (
-            <li
-              key={item.name}
-              className={`mobile-menu-item ${
-                location.pathname === item.link ? "active" : ""
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Link to={item.link} className="mobile-menu-link">
-                {item.name}
-              </Link>
-              {item.submenu && (
-                <div className="mobile-submenu">
-                  {item.submenu.map((subItem) => (
-                    <Link
-                      key={subItem.name}
-                      to={subItem.link}
-                      className="mobile-submenu-item"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {subItem.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </li>
-          ))}
-          <li className="mobile-menu-item">
-            <Link 
-              to="/subscribe" 
-              className="mobile-cta-button"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Subscribe
-            </Link>
-          </li>
-        </ul>
-      </div>
-
       <style jsx>{`
-        /* Navbar container */
+        /* Navbar Base Styles */
         .navbar {
-          background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-          padding: 0;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-          position: sticky;
+          position: fixed;
           top: 0;
-          z-index: 1000;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(10px);
-          background-color: rgba(31, 41, 55, 0.95);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          z-index: 1000;
+          border-bottom: 1px solid #f0f0f0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          padding: 1rem 0;
+          transition: all 0.3s ease;
         }
 
-        .navbar-container {
-          max-width: 1200px;
+        .nav-container {
+          max-width: 1280px;
           margin: 0 auto;
-          padding: 0.75rem 2rem;
+          padding: 0 2rem;
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          position: relative;
+          justify-content: space-between;
+          gap: 2rem;
         }
 
-        /* Logo */
-        .navbar-logo a {
-          text-decoration: none;
+        /* Logo Styles */
+        .logo {
           display: flex;
           align-items: center;
           gap: 4px;
-          transition: transform 0.3s ease;
+          font-weight: 700;
+          font-size: 1.5rem;
+          flex-shrink: 0;
         }
 
-        .navbar-logo a:hover {
-          transform: scale(1.05);
-        }
-
-        .logo-text {
-          color: #ffffff;
-          font-size: 1.75rem;
-          font-weight: 800;
-          letter-spacing: -0.5px;
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        .logo-main {
+          color: #1a1a1a;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -188,278 +142,321 @@ function Navbar() {
         .logo-dot {
           color: #3b82f6;
           font-size: 2rem;
-          font-weight: bold;
-          animation: pulse 2s infinite;
+          line-height: 1;
         }
 
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        /* Search Bar Styles */
+        .search-container {
+          flex: 1;
+          max-width: 500px;
         }
 
-        /* Desktop Menu */
-        .navbar-menu {
-          list-style: none;
-          display: flex;
-          gap: 2rem;
-          margin: 0;
-          padding: 0;
+        .search-form {
           position: relative;
-        }
-
-        .navbar-item {
-          position: relative;
-        }
-
-        .navbar-link {
-          text-decoration: none;
-          color: #d1d5db;
-          padding: 0.5rem 0;
-          font-weight: 500;
-          font-size: 0.95rem;
           display: flex;
           align-items: center;
-          gap: 4px;
-          transition: all 0.3s ease;
-          position: relative;
+          width: 100%;
         }
 
-        .navbar-link::after {
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          color: #666;
+          transition: color 0.2s;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 0.75rem 1rem 0.75rem 3rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 10px;
+          font-size: 0.95rem;
+          background: #f9fafb;
+          transition: all 0.2s;
+          outline: none;
+        }
+
+        .search-input:focus {
+          border-color: #3b82f6;
+          background: white;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-input::placeholder {
+          color: #9ca3af;
+        }
+
+        /* Desktop Navigation Menu */
+        .nav-menu {
+          display: flex;
+          gap: 2rem;
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        .nav-link {
+          color: #4b5563;
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 0.95rem;
+          padding: 0.5rem 0;
+          position: relative;
+          transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+          color: #3b82f6;
+        }
+
+        .nav-link.active {
+          color: #3b82f6;
+        }
+
+        .nav-link.active::after {
           content: '';
           position: absolute;
-          bottom: -5px;
+          bottom: 0;
           left: 0;
-          width: 0;
+          right: 0;
           height: 2px;
-          background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-          transition: width 0.3s ease;
+          background: #3b82f6;
+          border-radius: 2px;
         }
 
-        .navbar-item:hover .navbar-link::after {
-          width: 100%;
+        /* User Actions */
+        .nav-actions {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+          flex-shrink: 0;
         }
 
-        .navbar-item:hover .navbar-link {
-          color: #ffffff;
-        }
-
-        .navbar-item.active .navbar-link {
-          color: #ffffff;
-        }
-
-        .navbar-item.active .navbar-link::after {
-          width: 100%;
-        }
-
-        .dropdown-icon {
-          transition: transform 0.3s ease;
-        }
-
-        .navbar-item:hover .dropdown-icon {
-          transform: rotate(180deg);
-        }
-
-        /* Submenu */
-        .submenu {
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%) translateY(10px);
-          background: rgba(31, 41, 55, 0.98);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          padding: 0.75rem 0;
-          min-width: 180px;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.3s ease;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .navbar-item:hover .submenu {
-          opacity: 1;
-          visibility: visible;
-          transform: translateX(-50%) translateY(0);
-        }
-
-        .submenu-item {
-          display: block;
-          padding: 0.75rem 1.5rem;
-          color: #d1d5db;
-          text-decoration: none;
-          font-size: 0.9rem;
-          transition: all 0.2s ease;
-        }
-
-        .submenu-item:hover {
-          color: #ffffff;
-          background: rgba(59, 130, 246, 0.1);
-          padding-left: 1.75rem;
-        }
-
-        /* CTA Button */
-        .cta-button {
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-          color: white;
-          padding: 0.75rem 1.5rem;
-          border-radius: 25px;
-          text-decoration: none;
-          font-weight: 600;
-          font-size: 0.9rem;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-          border: none;
+        .btn-login {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1.5rem;
+          background: transparent;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          color: #4b5563;
+          font-weight: 500;
+          font-size: 0.95rem;
           cursor: pointer;
+          transition: all 0.2s;
         }
 
-        .cta-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        .btn-login:hover {
+          background: #f9fafb;
+          border-color: #d1d5db;
         }
 
-        /* Mobile Menu Button */
-        .mobile-menu-button {
+        .btn-primary {
+          padding: 0.5rem 1.5rem;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 500;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:active {
+          transform: translateY(0);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
           display: none;
           background: none;
           border: none;
-          color: #ffffff;
+          color: #4b5563;
           cursor: pointer;
           padding: 0.5rem;
-          border-radius: 8px;
-          transition: background-color 0.3s ease;
+          border-radius: 6px;
+          transition: background 0.2s;
         }
 
-        .mobile-menu-button:hover {
-          background-color: rgba(255, 255, 255, 0.1);
+        .mobile-menu-toggle:hover {
+          background: #f3f4f6;
         }
 
         /* Mobile Menu */
         .mobile-menu {
           display: none;
-          background: rgba(31, 41, 55, 0.98);
-          backdrop-filter: blur(10px);
-          position: fixed;
-          top: 70px;
+          background: white;
+          border-top: 1px solid #f0f0f0;
+          padding: 1.5rem 2rem;
+          position: absolute;
+          top: 100%;
           left: 0;
           right: 0;
-          padding: 1rem 2rem;
-          transform: translateY(-100%);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          transform: translateY(-10px);
           opacity: 0;
+          visibility: hidden;
           transition: all 0.3s ease;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .mobile-menu.open {
           transform: translateY(0);
           opacity: 1;
+          visibility: visible;
         }
 
-        .mobile-menu-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
+        .mobile-search {
+          margin-bottom: 1.5rem;
         }
 
-        .mobile-menu-item {
-          padding: 0.75rem 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .mobile-search-form {
+          position: relative;
+          display: flex;
+          align-items: center;
         }
 
-        .mobile-menu-link {
-          color: #d1d5db;
-          text-decoration: none;
-          font-size: 1.1rem;
-          font-weight: 500;
-          display: block;
-          transition: color 0.3s ease;
+        .mobile-search-form svg {
+          position: absolute;
+          left: 1rem;
+          color: #666;
         }
 
-        .mobile-menu-item.active .mobile-menu-link {
-          color: #3b82f6;
-        }
-
-        .mobile-menu-link:hover {
-          color: #ffffff;
-        }
-
-        .mobile-submenu {
-          padding-left: 1rem;
-          margin-top: 0.5rem;
-        }
-
-        .mobile-submenu-item {
-          display: block;
-          padding: 0.5rem 0;
-          color: #9ca3af;
-          text-decoration: none;
+        .mobile-search-form input {
+          width: 100%;
+          padding: 0.75rem 1rem 0.75rem 3rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
           font-size: 0.95rem;
-          transition: color 0.3s ease;
+          background: #f9fafb;
         }
 
-        .mobile-submenu-item:hover {
+        .mobile-nav-menu {
+          list-style: none;
+          margin: 0 0 1.5rem 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .mobile-nav-link {
+          display: block;
+          padding: 0.75rem;
+          color: #4b5563;
+          text-decoration: none;
+          font-weight: 500;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+          background: #f3f4f6;
           color: #3b82f6;
         }
 
-        .mobile-cta-button {
-          display: block;
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-          color: white;
-          padding: 1rem;
-          border-radius: 12px;
-          text-decoration: none;
-          text-align: center;
-          font-weight: 600;
-          margin-top: 1rem;
-          transition: all 0.3s ease;
+        .mobile-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
 
-        .mobile-cta-button:hover {
-          transform: scale(1.02);
+        .btn-login-mobile {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.75rem;
+          background: transparent;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          color: #4b5563;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .btn-primary-mobile {
+          padding: 0.75rem;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
         }
 
         /* Responsive Design */
         @media (max-width: 1024px) {
-          .cta-button {
-            display: none;
+          .nav-container {
+            padding: 0 1.5rem;
+            gap: 1.5rem;
+          }
+          
+          .search-container {
+            max-width: 400px;
           }
         }
 
         @media (max-width: 768px) {
-          .navbar-menu,
-          .navbar-container .cta-button {
+          .nav-menu {
             display: none;
           }
-
-          .mobile-menu-button {
+          
+          .search-container {
+            display: none;
+          }
+          
+          .mobile-menu-toggle {
             display: block;
           }
-
+          
           .mobile-menu {
             display: block;
           }
-
-          .navbar-container {
-            padding: 0.75rem 1rem;
+          
+          .nav-container {
+            padding: 0 1rem;
           }
-
-          .logo-text {
+          
+          .nav-actions {
+            display: none;
+          }
+          
+          .logo {
+            font-size: 1.25rem;
+          }
+          
+          .logo-dot {
             font-size: 1.5rem;
           }
         }
 
         @media (max-width: 480px) {
-          .navbar-container {
-            padding: 0.75rem;
+          .nav-container {
+            padding: 0 0.75rem;
           }
-
+          
           .mobile-menu {
             padding: 1rem;
           }
         }
+
+        /* Scrolled State */
+        .navbar.scrolled {
+          padding: 0.5rem 0;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
       `}</style>
     </>
   );
-}
+};
 
 export default Navbar;

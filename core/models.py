@@ -88,6 +88,7 @@ class Blog_Post(TimeStampedModel):
     slug = models.SlugField(unique=True)
     category = models.ForeignKey(Category_Types, on_delete=models.CASCADE, related_name='blog_posts_category')
     tag = models.ManyToManyField(Tag_Types, related_name='blog_posts_tags')
+    featured_article = models.BooleanField(default=False)
     image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
 
     def __str__(self):
