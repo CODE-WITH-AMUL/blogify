@@ -1,70 +1,52 @@
-# blogs/views.py (Updated Version)
-
 from rest_framework import generics
-from rest_framework.filters import SearchFilter, OrderingFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Count # Import Count for annotations
+from rest_framework.response import Response
+from django.db.models import Q
+from .models import Post
+from .serializers import PostSerializer
 
-from .models import Blog_Post, Category_Types, Tag_Types, Search
-from .serializers import (
-    BlogPostSerializer, 
-    CategoryListSerializer, # Use list serializer
-    TagListSerializer,      # Use list serializer
-    SearchSerializer
-)
+class PostList(generics.ListAPIView):
+    serializer_class = PostSerializer
 
-#---------------------[BLOG VIEWS]---------------------#
-class BlogListView(generics.ListCreateAPIView):
-    queryset = Blog_Post.objects.all().select_related('category').prefetch_related('tag')
-    serializer_class = BlogPostSerializer
-    
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['title', 'content', 'author']
-    filterset_fields = {
-        'featured_article': ['exact'],
-        'category__Category': ['exact', 'icontains'],
-    }
-    ordering_fields = ['created_at', 'title']
-    ordering = ['-created_at']
+    def get_queryset(self):
+        queryset = Post.objects.filter(published=True)
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(categories__slug=category)
+        return queryset.distinct()
 
-# You can split BlogListView into separate views for featured/recent if preferred:
-# class FeaturedPostListView(generics.ListAPIView):
-#     queryset = Blog_Post.objects.filter(featured_article=True).select_related('category')[:3]
-#     serializer_class = BlogPostSerializer
-
-class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Blog_Post.objects.all().select_related('category').prefetch_related('tag')
-    serializer_class = BlogPostSerializer
+class PostDetail(generics.RetrieveAPIView):
+    queryset = Post.objects.filter(published=True)
+    serializer_class = PostSerializer
     lookup_field = 'slug'
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.views += 1
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
-#---------------------[CATEGORY VIEWS]---------------------#
-class CategoryListView(generics.ListAPIView):
-    # Annotate to add 'post_count' field, which the serializer uses
-    queryset = Category_Types.objects.annotate(
-        post_count=Count('blog_posts_category')
-    ).order_by('-post_count')
-    serializer_class = CategoryListSerializer
+class SearchView(generics.ListAPIView):
+    serializer_class = PostSerializer
 
-class CategoryDetailView(generics.RetrieveAPIView):
-    queryset = Category_Types.objects.all()
-    serializer_class = CategoryListSerializer # Can use List serializer here too
-    lookup_field = 'Category'
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '')
+        category = self.request.query_params.get('category', '')
+        tag = self.request.query_params.get('tag', '')
+        queryset = Post.objects.filter(published=True)
+        if query:
+            q_objects = Q(title__icontains=query) | Q(content__icontains=query)
+            if category:
+                for cat in category.split(','):
+                    q_objects |= Q(categories__name__icontains=cat.strip())
+            if tag:
+                for t in tag.split(','):
+                    q_objects |= Q(tags__name__icontains=t.strip())
+            queryset = queryset.filter(q_objects)
+        return queryset.distinct().order_by('-created_date')
 
+class FeaturedPostsView(generics.ListAPIView):  # New: Featured posts
+    serializer_class = PostSerializer
 
-#---------------------[TAG VIEWS]---------------------#
-class TagListView(generics.ListAPIView):
-    queryset = Tag_Types.objects.all()
-    serializer_class = TagListSerializer
-
-class TagDetailView(generics.RetrieveAPIView):
-    queryset = Tag_Types.objects.all()
-    serializer_class = TagListSerializer
-    lookup_field = 'Tag'
-
-
-#---------------------[SEARCH VIEWS]---------------------#
-class SearchListView(generics.ListCreateAPIView):
-    queryset = Search.objects.all()
-    serializer_class = SearchSerializer
-    # This view tracks searches, not for actual blog post searching
+    def get_queryset(self):
+        return Post.objects.filter(published=True, is_featured=True).order_by('-created_date')[:5]  # Top 5 featured

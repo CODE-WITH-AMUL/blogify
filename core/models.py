@@ -1,107 +1,59 @@
-# blogs/models.py (Updated Version)
-
 from django.db import models
-from django.utils import timezone
+from django.utils.text import slugify
+from ckeditor.fields import RichTextField
 
-#---------------------[DATA LIST ]---------------------#
-# It's good practice to keep choices defined outside the model classes 
-# or in a separate file if they are extensive.
-CATEGORY_DEFAULT_CHOICES = [
-    ('TECHNOLOGY', 'Technology'),
-    ('LIFESTYLE', 'Lifestyle'),
-    ('BUSINESS', 'Business'),
-    ('ENTERTAINMENT', 'Entertainment'),
-    ('HEALTH', 'Health'),
-    ('CODING', 'Coding'),
-    ('PROGRAMMING', 'Programming'),
-    ('FOOD', 'Food'),
-    ('FASHION', 'Fashion'),
-    ('SPORTS', 'Sports'),
-    ('TRAVEL', 'Travel'),
-    ('OTHER', 'Other'),
-]
-
-TAG_DEFAULT_CHOICES = [
-    # Programming Languages
-    ('PYTHON', 'Python'),
-    ('JAVASCRIPT', 'JavaScript'),
-    # ... (Include all your tags here)
-    ('DJANGO', 'Django'),
-    ('REACT', 'React'),
-    # ...
-]
-
-#---------------------[UNIVERSAL TIME]---------------------#
-class TimeStampedModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True, max_length=100)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
     class Meta:
-        abstract = True
+        verbose_name_plural = 'Categories'
+        ordering = ['name']
 
-
-#---------------------[CATEGORY MODEL]---------------------#
-class Category_Types(models.Model):
-    Category = models.CharField(
-        max_length=50, 
-        choices=CATEGORY_DEFAULT_CHOICES, 
-        unique=True
-    )
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.Category
+        return self.name
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True, max_length=50)
 
-#---------------------[TAG MODEL]---------------------#
-class Tag_Types(models.Model):
-    Tag = models.CharField(
-        max_length=50, 
-        choices=TAG_DEFAULT_CHOICES, 
-        unique=True
-    )
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.Tag
+        return self.name
 
-
-#---------------------[BLOG MODEL]---------------------#
-class Blog_Post(TimeStampedModel):
-    title = models.CharField(max_length=250)
-    content = models.TextField()
-    author = models.CharField(max_length=250)
-    slug = models.SlugField(unique=True)
-    # Using 'on_delete=models.PROTECT' is often safer than CASCADE for critical relationships
-    category = models.ForeignKey(
-        Category_Types, 
-        on_delete=models.CASCADE, 
-        related_name='blog_posts_category'
-    )
-    tag = models.ManyToManyField(
-        Tag_Types, 
-        related_name='blog_posts_tags'
-    )
-    featured_article = models.BooleanField(default=False)
-    image = models.ImageField(
-        upload_to='blog_images/', 
-        null=True, 
-        blank=True
-    )
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=200)
+    featured_image = models.ImageField(upload_to='posts/images/', blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='posts/thumbnails/', blank=True, null=True)
+    content = RichTextField()
+    author = models.CharField(max_length=100 , default='Code With Amul')
+    categories = models.ManyToManyField(Category, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    views = models.PositiveIntegerField(default=0)
+    likes = models.PositiveIntegerField(default=0)
+    is_featured = models.BooleanField(default=False)  # New: Featured flag
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    published = models.BooleanField(default=True)
 
     class Meta:
-        # Ensures that the latest posts are always retrieved first by default
-        ordering = ['-created_at'] 
+        ordering = ['-created_date']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
-
-
-#---------------------[SEARCH MODEL]---------------------#
-class Search(models.Model):
-    query = models.CharField(max_length=200)
-    searched_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-searched_at']
-
-    def __str__(self):
-        return self.query

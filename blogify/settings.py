@@ -50,9 +50,6 @@ INSTALLED_APPS += EXTRA_APPS
 
 
 #-------------------[CROSS SITES]-------------------#
-CORS_ALLOWED_ORIGINS = env.list(
-    'CORS_ALLOWED_ORIGINS_KEY'
-)
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -173,6 +170,33 @@ REST_FRAMEWORK = {
 
 
 #-----------------------[ADMIN UI]--------------------------#
+# CKEditor Config
+CKEDITOR_UPLOAD_PATH = "uploads/"  # Subdir under MEDIA_ROOT
+CKEDITOR_IMAGE_BACKEND = "pillow"
+CKEDITOR_JQUERY_URL = 'https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',  # MS Word-like full toolbar
+        'height': 300,
+        'width': '100%',
+        'extraPlugins': ','.join([
+            'uploadimage',  # Enable image uploads
+            'div',
+            'autolink',
+            'autoembed',
+            'embedsemantic',
+            'autogrow',
+            'widget',
+            'lineutils',
+            'clipboard',
+            'dialog',
+            'dialogui',
+            'elementspath'
+        ]),
+    },
+}
+
+
 JAZZMIN_SETTINGS = {
     # =============================================
     # SITE CONFIGURATION
