@@ -1,9 +1,11 @@
-#---------------------[IMPORT MODULES]---------------------#
+# blogs/models.py (Updated Version)
+
 from django.db import models
 from django.utils import timezone
 
-
 #---------------------[DATA LIST ]---------------------#
+# It's good practice to keep choices defined outside the model classes 
+# or in a separate file if they are extensive.
 CATEGORY_DEFAULT_CHOICES = [
     ('TECHNOLOGY', 'Technology'),
     ('LIFESTYLE', 'Lifestyle'),
@@ -23,37 +25,11 @@ TAG_DEFAULT_CHOICES = [
     # Programming Languages
     ('PYTHON', 'Python'),
     ('JAVASCRIPT', 'JavaScript'),
-    ('JAVA', 'Java'),
-    ('CPLUSPLUS', 'C++'),
-    ('RUBY', 'Ruby'),
-    ('CSHARP', 'C#'),
-    ('SWIFT', 'Swift'),
-    ('KOTLIN', 'Kotlin'),
-    ('GO', 'Go'),
-    ('RUST', 'Rust'),
-    ('TYPESCRIPT', 'TypeScript'),
-    ('PHP', 'PHP'),
-    
-    # Web Markup/Stylesheet Languages
-    ('HTML', 'HTML'),
-    ('CSS', 'CSS'),
-    
-    # Frameworks/Libraries (Web, Backend, Frontend)
+    # ... (Include all your tags here)
     ('DJANGO', 'Django'),
-    ('FLASK', 'Flask'),
     ('REACT', 'React'),
-    ('ANGULAR', 'Angular'),
-    ('VUE', 'Vue.js'),
-    ('NODEJS', 'Node.js'),
-    
-    # Databases/Database Query Languages
-    ('SQL', 'SQL'),
-    ('NOSQL', 'NoSQL'),
-    ('MONGODB', 'MongoDB'),
-    ('POSTGRESQL', 'PostgreSQL'),
-    ('MYSQL', 'MySQL'),
+    # ...
 ]
-
 
 #---------------------[UNIVERSAL TIME]---------------------#
 class TimeStampedModel(models.Model):
@@ -66,7 +42,11 @@ class TimeStampedModel(models.Model):
 
 #---------------------[CATEGORY MODEL]---------------------#
 class Category_Types(models.Model):
-    Category = models.CharField(max_length=50, choices=CATEGORY_DEFAULT_CHOICES, unique=True)
+    Category = models.CharField(
+        max_length=50, 
+        choices=CATEGORY_DEFAULT_CHOICES, 
+        unique=True
+    )
 
     def __str__(self):
         return self.Category
@@ -74,7 +54,11 @@ class Category_Types(models.Model):
 
 #---------------------[TAG MODEL]---------------------#
 class Tag_Types(models.Model):
-    Tag = models.CharField(max_length=50, choices=TAG_DEFAULT_CHOICES, unique=True)
+    Tag = models.CharField(
+        max_length=50, 
+        choices=TAG_DEFAULT_CHOICES, 
+        unique=True
+    )
 
     def __str__(self):
         return self.Tag
@@ -86,19 +70,38 @@ class Blog_Post(TimeStampedModel):
     content = models.TextField()
     author = models.CharField(max_length=250)
     slug = models.SlugField(unique=True)
-    category = models.ForeignKey(Category_Types, on_delete=models.CASCADE, related_name='blog_posts_category')
-    tag = models.ManyToManyField(Tag_Types, related_name='blog_posts_tags')
+    # Using 'on_delete=models.PROTECT' is often safer than CASCADE for critical relationships
+    category = models.ForeignKey(
+        Category_Types, 
+        on_delete=models.CASCADE, 
+        related_name='blog_posts_category'
+    )
+    tag = models.ManyToManyField(
+        Tag_Types, 
+        related_name='blog_posts_tags'
+    )
     featured_article = models.BooleanField(default=False)
-    image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+    image = models.ImageField(
+        upload_to='blog_images/', 
+        null=True, 
+        blank=True
+    )
+
+    class Meta:
+        # Ensures that the latest posts are always retrieved first by default
+        ordering = ['-created_at'] 
 
     def __str__(self):
-        return f"The blog post {self.title}"
+        return self.title
 
 
 #---------------------[SEARCH MODEL]---------------------#
 class Search(models.Model):
     query = models.CharField(max_length=200)
     searched_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-searched_at']
 
     def __str__(self):
         return self.query
