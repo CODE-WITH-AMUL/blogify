@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
 import axios from 'axios';
 import { 
   ArrowRight, 
@@ -30,7 +29,10 @@ import {
   Zap,
   BookOpen,
   Database,
-  Loader
+  Loader,
+  Mail,
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 
 // API base URL - adjust according to your Django server
@@ -306,419 +308,1566 @@ function GetStarted() {
   return (
     <div className="blog-landing-page">
       {/* Navigation */}
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="logo">
-            <span className="logo-main">Code With Amul</span>
-          </div>
-          
-          <div className="search-container">
-            <form onSubmit={handleSearch} className="search-form">
-              <Search size={20} />
-              <input
-                type="text"
-                placeholder="Search articles, tutorials, guides..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </form>
-          </div>
+      <header className="header">
+        <div className="container">
+          <div className="header-content">
+            <div className="logo-section">
+              <div className="logo">
+                <Code size={24} className="logo-icon" />
+                <div>
+                  <h1 className="logo-title">Code With Amul</h1>
+                  <p className="logo-subtitle">Programming Blog & Tutorials</p>
+                </div>
+              </div>
+            </div>
+            
+            <nav className="main-nav">
+              <ul className="nav-links">
+                {['Home', 'Blog', 'Tutorials', 'Projects', 'About', 'Contact'].map((item) => (
+                  <li key={item}>
+                    <a href={`#${item.toLowerCase()}`} className="nav-link">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
 
-          <ul className="nav-menu">
-            {['Home', 'Blog', 'About', 'Contact'].map((item) => (
-              <li key={item}>
-                <a href={`#${item.toLowerCase()}`}>{item}</a>
-              </li>
-            ))}
-          </ul>
+            <div className="header-actions">
+              <form onSubmit={handleSearch} className="search-form">
+                <div className="search-input-group">
+                  <Search size={20} className="search-icon" />
+                  <input
+                    type="search"
+                    placeholder="Search tutorials, articles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search articles"
+                  />
+                </div>
+              </form>
+              <a href="/subscribe" className="btn btn-outline">
+                Subscribe
+              </a>
+            </div>
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* Error Display */}
       {error && (
-        <div className="error-banner">
-          <p>{error} Using mock data for demonstration.</p>
+        <div className="alert alert-warning" role="alert">
+          <p>{error} Using sample data for demonstration.</p>
         </div>
       )}
 
       {/* Hero Section */}
-      <section className="hero">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <span className="badge">TRENDING</span>
-          </div>
-          <div className="hero-image">
-            <div className="image-placeholder">
-              <img
-                src="/amul.png"
-                alt="Code With Amul logo"
-                className="hero-main-image"
-              />
+      <section className="hero-section" aria-label="Featured content">
+        <div className="container">
+          <div className="hero-content">
+            <div className="hero-text">
+              <div className="category-badge">
+                <span className="badge">TRENDING NOW</span>
+              </div>
+              <h1 className="hero-title">
+                Master Modern Programming with Practical Examples
+              </h1>
+              <p className="hero-description">
+                Expert tutorials on React, Python, Django, JavaScript, and full-stack development. 
+                Learn through real-world projects and best practices.
+              </p>
+              
+              <div className="hero-meta">
+                <div className="meta-item">
+                  <User size={18} aria-hidden="true" />
+                  <span>By Code With Amul</span>
+                </div>
+                <div className="meta-item">
+                  <Calendar size={18} aria-hidden="true" />
+                  <span>Updated Weekly</span>
+                </div>
+                <div className="meta-item">
+                  <Clock size={18} aria-hidden="true" />
+                  <span>5-15 min reads</span>
+                </div>
+              </div>
+              
+              <div className="hero-cta">
+                <a href="/blog" className="btn btn-primary">
+                  Start Learning <ArrowRight size={20} aria-hidden="true" />
+                </a>
+                <a href="#featured" className="btn btn-secondary">
+                  View Featured
+                </a>
+              </div>
+            </div>
+            
+            <div className="hero-visual">
+              <div className="code-preview">
+                <div className="code-header">
+                  <div className="code-dots">
+                    <span className="dot red"></span>
+                    <span className="dot yellow"></span>
+                    <span className="dot green"></span>
+                  </div>
+                  <span className="code-title">example.js</span>
+                </div>
+                <pre className="code-snippet">
+                  <code>{`// Modern React Pattern
+const useCustomHook = () => {
+  const [state, setState] = useState();
+  useEffect(() => {
+    // Clean, readable code
+  }, []);
+  return state;
+};`}</code>
+                </pre>
+              </div>
             </div>
           </div>
-          
-          <h1 className="hero-title">
-            Master Programming: Tips, Projects & Best Practices
-          </h1>
-
-          <p className="hero-description">
-            Learn coding with real-world projects and tutorials. Explore React, Python, Django, and modern web development techniques to level up your skills.
-          </p>
-          
-          <div className="hero-meta">
-            <div className="author">
-              <User size={16} />
-              <span>Written by Code With Amul</span>
-            </div>
-            <div className="read-time">
-              <Clock size={16} />
-              <span>15 min read</span>
-            </div>
-          </div>
-          
-          <div className="hero-tags">
-            {allTags.slice(0, 15).map((tag) => (
-              <span key={tag} className="tag">{tag}</span>
-            ))}
-          </div>
-          
-          <a href="/blog">
-            <button className="btn-primary btn-hero">
-              Read All Articles <ArrowRight size={20} />
-            </button>
-          </a>
         </div>
       </section>
 
       {/* Featured Posts */}
-      <section className="featured-posts">
-        <div className="section-header">
-          <h2>
-            <Star size={24} />
-            Featured Articles
-          </h2>
-          <a href="#" className="view-all">
-            View All <ChevronRight size={16} />
-          </a>
+      <section id="featured" className="featured-section" aria-label="Featured articles">
+        <div className="container">
+          <div className="section-header">
+            <div className="section-title">
+              <Star size={24} aria-hidden="true" />
+              <h2>Featured Articles</h2>
+            </div>
+            <p className="section-subtitle">Handpicked quality content for deep learning</p>
+          </div>
+          
+          {loading.featured ? (
+            <div className="loading-state" aria-live="polite">
+              <Loader size={32} className="spinner" aria-hidden="true" />
+              <p>Loading featured articles...</p>
+            </div>
+          ) : (
+            <div className="featured-grid">
+              {featuredPosts.slice(0, 3).map((post, index) => (
+                <article key={post.id} className="featured-card" itemScope itemType="http://schema.org/Article">
+                  <div className="featured-card-inner">
+                    <div className="card-image">
+                      <div className="image-container">
+                        <div className="category-tag">
+                          {post.category?.Category || 'Programming'}
+                        </div>
+                        <div className="card-stats">
+                          <span className="stat">
+                            <Eye size={16} aria-hidden="true" />
+                            {post.views || '1.2K'}
+                          </span>
+                          <span className="stat">
+                            <Heart size={16} aria-hidden="true" />
+                            {post.likes || 245}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="card-content">
+                      <div className="card-meta">
+                        <time dateTime={post.created_at}>
+                          {formatDate(post.created_at)}
+                        </time>
+                        <span className="read-time">
+                          {calculateReadTime(post.content)}
+                        </span>
+                      </div>
+                      
+                      <h3 className="card-title" itemProp="headline">
+                        {post.title}
+                      </h3>
+                      
+                      <p className="card-excerpt" itemProp="description">
+                        {post.content ? post.content.substring(0, 120) + '...' : 'Expert programming insights...'}
+                      </p>
+                      
+                      <div className="card-tags">
+                        {post.tag && post.tag.slice(0, 2).map((tag) => (
+                          <span key={tag} className="tag">
+                            <Tag size={12} aria-hidden="true" />
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      <div className="card-actions">
+                        <a 
+                          href={`/blog/${post.slug}`} 
+                          className="read-more"
+                          aria-label={`Read more about ${post.title}`}
+                        >
+                          Read Article <ExternalLink size={16} aria-hidden="true" />
+                        </a>
+                        <div className="action-buttons">
+                          <button className="icon-btn" aria-label="Bookmark article">
+                            <Bookmark size={18} aria-hidden="true" />
+                          </button>
+                          <button className="icon-btn" aria-label="Share article">
+                            <Share2 size={18} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
-        
-        {loading.featured ? (
-          <div className="loading-container">
-            <Loader size={32} className="spinner" />
-            <p>Loading featured articles...</p>
-          </div>
-        ) : (
-          <div className="featured-grid">
-            {featuredPosts.slice(0, 3).map((post) => (
-              <article key={post.id} className="post-card featured">
-                <div className="post-image" style={{
-                  background: `linear-gradient(135deg, #3b82f6, #8b5cf6)`,
-                  backgroundImage: post.image ? `url(${post.image})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}>
-                  {post.category && (
-                    <div className="category-badge">{post.category.Category}</div>
-                  )}
-                  <div className="image-overlay">
-                    <div className="post-stats">
-                      <span><Heart size={16} /> {post.likes || 0}</span>
-                      <span><MessageCircle size={16} /> {post.comments || 0}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="post-content">
-                  <div className="post-meta">
-                    <span className="author">{post.author}</span>
-                    <span className="date">{formatDate(post.created_at)}</span>
-                    <span className="read-time">{calculateReadTime(post.content)}</span>
-                  </div>
-                  
-                  <h3 className="post-title">{post.title}</h3>
-                  <p className="post-excerpt">
-                    {post.content ? post.content.substring(0, 150) + '...' : 'No content available'}
-                  </p>
-                  
-                  <div className="post-tags">
-                    {post.tag && post.tag.slice(0, 3).map((tag) => (
-                      <span key={tag} className="tag"><Tag size={12} /> {tag}</span>
-                    ))}
-                  </div>
-                  
-                  <div className="post-actions">
-                    <a href={`/blog/${post.slug}`} className="btn-read">
-                      Read More <ChevronRight size={16} />
-                    </a>
-                    <div className="action-icons">
-                      <button><Bookmark size={18} /></button>
-                      <button><Share2 size={18} /></button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
       </section>
 
       {/* Main Content */}
-      <div className="main-content">
-        <div className="content-wrapper">
-          {/* Recent Posts */}
-          <section className="recent-posts">
-            <div className="section-header">
-              <h2>Latest Articles</h2>
-              <div className="filter-options">
-                <button className="filter-btn active" onClick={() => handleFilter('All')}>All</button>
-                {categories.slice(0, 4).map(cat => (
+      <main className="main-content" role="main">
+        <div className="container">
+          <div className="content-layout">
+            {/* Recent Posts */}
+            <section className="recent-section" aria-label="Recent articles">
+              <div className="section-header">
+                <div>
+                  <h2>Latest Tutorials</h2>
+                  <p className="section-subtitle">Fresh content updated regularly</p>
+                </div>
+                <div className="filter-tabs">
                   <button 
-                    key={cat.name} 
-                    className="filter-btn"
-                    onClick={() => handleFilter(cat.name)}
+                    className="filter-tab active"
+                    onClick={() => handleFilter('All')}
                   >
-                    {cat.name}
+                    All Topics
                   </button>
-                ))}
-              </div>
-            </div>
-            
-            {loading.recent ? (
-              <div className="loading-container">
-                <Loader size={32} className="spinner" />
-                <p>Loading latest articles...</p>
-              </div>
-            ) : (
-              <>
-                <div className="posts-list">
-                  {recentPosts.map((post) => (
-                    <article key={post.id} className="post-card recent">
-                      <div className="post-content">
-                        <div className="post-header">
-                          {post.category && (
-                            <span className="post-category">{post.category.Category}</span>
-                          )}
-                          <span className="post-date">{formatDate(post.created_at)}</span>
-                        </div>
-                        
-                        <h3 className="post-title">{post.title}</h3>
-                        <p className="post-excerpt">
-                          {post.content ? post.content.substring(0, 200) + '...' : 'No content available'}
-                        </p>
-                        
-                        <div className="post-footer">
-                          <div className="author-info">
-                            <User size={14} />
-                            <span>{post.author}</span>
-                          </div>
-                          <div className="post-meta">
-                            <Clock size={14} />
-                            <span>{calculateReadTime(post.content)}</span>
-                          </div>
-                          <a href={`/blog/${post.slug}`} className="btn-read-sm">
-                            Read <ChevronRight size={14} />
-                          </a>
-                        </div>
-                      </div>
-                    </article>
+                  {categories.slice(0, 4).map(cat => (
+                    <button 
+                      key={cat.name} 
+                      className="filter-tab"
+                      onClick={() => handleFilter(cat.name)}
+                    >
+                      {cat.name}
+                    </button>
                   ))}
                 </div>
-                
-                <div className="load-more">
-                  <button className="btn-load" onClick={fetchAllData}>
-                    Load More Articles
-                  </button>
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Sidebar */}
-          <aside className="sidebar">
-            {/* Categories */}
-            <div className="sidebar-widget">
-              <h3>
-                <BookOpen size={20} />
-                Categories
-              </h3>
-              {loading.categories ? (
-                <div className="loading-small">
-                  <Loader size={16} className="spinner" />
-                  <span>Loading categories...</span>
+              </div>
+              
+              {loading.recent ? (
+                <div className="loading-state" aria-live="polite">
+                  <Loader size={32} className="spinner" aria-hidden="true" />
+                  <p>Loading latest articles...</p>
                 </div>
               ) : (
-                <div className="categories-list">
-                  {categories.map((category) => (
-                    <a key={category.name} href={`/category/${category.name.toLowerCase()}`} className="category-item">
-                      <div className="category-info">
-                        {category.icon}
-                        <span>{category.name}</span>
+                <>
+                  <div className="articles-list">
+                    {recentPosts.map((post) => (
+                      <article key={post.id} className="article-card" itemScope itemType="http://schema.org/Article">
+                        <div className="article-content">
+                          <div className="article-header">
+                            <div className="article-category">
+                              {getCategoryIcon(post.category?.Category)}
+                              <span>{post.category?.Category || 'Programming'}</span>
+                            </div>
+                            <time 
+                              className="article-date" 
+                              dateTime={post.created_at}
+                              itemProp="datePublished"
+                            >
+                              {formatDate(post.created_at)}
+                            </time>
+                          </div>
+                          
+                          <h3 className="article-title" itemProp="headline">
+                            <a href={`/blog/${post.slug}`} itemProp="url">
+                              {post.title}
+                            </a>
+                          </h3>
+                          
+                          <p className="article-excerpt" itemProp="description">
+                            {post.content ? post.content.substring(0, 160) + '...' : 'Learn practical programming skills...'}
+                          </p>
+                          
+                          <div className="article-footer">
+                            <div className="article-meta">
+                              <div className="author" itemProp="author">
+                                <User size={14} aria-hidden="true" />
+                                <span>{post.author || 'Code With Amul'}</span>
+                              </div>
+                              <div className="reading-time">
+                                <Clock size={14} aria-hidden="true" />
+                                <span>{calculateReadTime(post.content)}</span>
+                              </div>
+                            </div>
+                            <a 
+                              href={`/blog/${post.slug}`} 
+                              className="article-link"
+                              aria-label={`Continue reading ${post.title}`}
+                            >
+                              Read <ChevronRight size={14} aria-hidden="true" />
+                            </a>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  
+                  <div className="load-more-container">
+                    <button 
+                      className="btn btn-load-more" 
+                      onClick={fetchAllData}
+                      aria-label="Load more articles"
+                    >
+                      Load More Articles
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
+
+            {/* Sidebar */}
+            <aside className="sidebar" aria-label="Additional information">
+              {/* Categories */}
+              <div className="sidebar-widget">
+                <div className="widget-header">
+                  <BookOpen size={20} aria-hidden="true" />
+                  <h3>Topics</h3>
+                </div>
+                {loading.categories ? (
+                  <div className="loading-small" aria-live="polite">
+                    <Loader size={16} className="spinner" aria-hidden="true" />
+                    <span>Loading topics...</span>
+                  </div>
+                ) : (
+                  <nav className="categories-list" aria-label="Browse by topic">
+                    {categories.map((category) => (
+                      <a 
+                        key={category.name} 
+                        href={`/category/${category.name.toLowerCase()}`}
+                        className="category-item"
+                        aria-label={`Browse ${category.name} articles (${category.count} posts)`}
+                      >
+                        <div className="category-info">
+                          {category.icon}
+                          <span>{category.name}</span>
+                        </div>
+                        <span className="category-count">{category.count}</span>
+                      </a>
+                    ))}
+                  </nav>
+                )}
+              </div>
+
+              {/* Trending Posts */}
+              <div className="sidebar-widget">
+                <div className="widget-header">
+                  <TrendingUp size={20} aria-hidden="true" />
+                  <h3>Trending Now</h3>
+                </div>
+                <div className="trending-list">
+                  {trendingPosts.map((post) => (
+                    <a 
+                      key={post.id} 
+                      href={`/blog/${post.id}`}
+                      className="trending-item"
+                      aria-label={`Trending ${post.rank}: ${post.title}`}
+                    >
+                      <div className="trending-rank">{post.rank}</div>
+                      <div className="trending-content">
+                        <h4>{post.title}</h4>
+                        <span className="trending-meta">{post.views} views</span>
                       </div>
-                      <span className="category-count">{category.count}</span>
                     </a>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Trending Posts */}
-            <div className="sidebar-widget">
-              <h3>
-                <TrendingUp size={20} />
-                Trending Now
-              </h3>
-              <div className="trending-list">
-                {trendingPosts.map((post) => (
-                  <a key={post.id} href={`/blog/${post.id}`} className="trending-item">
-                    <div className="trending-rank">{post.rank}</div>
-                    <div className="trending-content">
-                      <h4>{post.title}</h4>
-                      <span className="trending-views">{post.views} views</span>
-                    </div>
-                  </a>
-                ))}
               </div>
-            </div>
 
-            {/* Popular Tags */}
-            <div className="sidebar-widget">
-              <h3>
-                <Tag size={20} />
-                Popular Tags
-              </h3>
-              {loading.tags ? (
-                <div className="loading-small">
-                  <Loader size={16} className="spinner" />
-                  <span>Loading tags...</span>
+              {/* Popular Tags */}
+              <div className="sidebar-widget">
+                <div className="widget-header">
+                  <Tag size={20} aria-hidden="true" />
+                  <h3>Popular Tags</h3>
                 </div>
-              ) : (
-                <div className="tags-cloud">
-                  {popularTags.map((tag) => (
-                    <a key={tag} href={`/tag/${tag.toLowerCase()}`} className="tag-item">
-                      #{tag}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
+                {loading.tags ? (
+                  <div className="loading-small" aria-live="polite">
+                    <Loader size={16} className="spinner" aria-hidden="true" />
+                    <span>Loading tags...</span>
+                  </div>
+                ) : (
+                  <div className="tags-cloud" role="list">
+                    {popularTags.map((tag) => (
+                      <a 
+                        key={tag} 
+                        href={`/tag/${tag.toLowerCase()}`}
+                        className="tag-item"
+                        role="listitem"
+                        aria-label={`Browse ${tag} tagged articles`}
+                      >
+                        #{tag}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Newsletter Widget */}
-            <div className="sidebar-widget newsletter-widget">
-              <h3>Subscribe to Newsletter</h3>
-              <p>Get the latest articles directly in your inbox</p>
-              <form onSubmit={handleSubscribe} className="subscribe-form">
+              {/* Newsletter Widget */}
+              <div className="sidebar-widget newsletter-widget">
+                <div className="widget-header">
+                  <Mail size={20} aria-hidden="true" />
+                  <h3>Stay Updated</h3>
+                </div>
+                <p>Get weekly programming insights delivered to your inbox</p>
+                <form onSubmit={handleSubscribe} className="subscribe-form">
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    aria-label="Email for newsletter subscription"
+                  />
+                  <button type="submit" className="btn btn-subscribe">
+                    Subscribe
+                  </button>
+                </form>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </main>
+
+      {/* Newsletter CTA */}
+      <section className="cta-section" aria-label="Newsletter subscription">
+        <div className="container">
+          <div className="cta-content">
+            <div className="cta-icon-wrapper">
+              <MessageCircle size={48} aria-hidden="true" />
+            </div>
+            <h2>Join 15,000+ Developers</h2>
+            <p>Get weekly tutorials, coding tips, and exclusive content directly in your inbox. No spam, just quality programming insights.</p>
+            <form onSubmit={handleSubscribe} className="cta-form">
+              <div className="input-group">
                 <input
                   type="email"
-                  placeholder="Your email"
+                  placeholder="Your work email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  aria-label="Email for newsletter subscription"
                 />
-                <button type="submit" className="btn-subscribe">
-                  Subscribe
+                <button type="submit" className="btn btn-primary">
+                  Get Free Tutorials
                 </button>
-              </form>
-            </div>
-          </aside>
-        </div>
-      </div>
-
-      {/* Newsletter CTA */}
-      <section className="newsletter-cta">
-        <div className="cta-content">
-          <div className="cta-icon">
-            <MessageCircle size={48} />
+              </div>
+              <p className="form-note">By subscribing, you agree to our Privacy Policy</p>
+            </form>
           </div>
-          <h2>Never Miss a Post</h2>
-          <p>Join 15,000+ developers who receive our weekly newsletter with the latest articles, tutorials, and coding tips.</p>
-          <form onSubmit={handleSubscribe} className="cta-form">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <button type="submit" className="btn-cta">
-              Subscribe Now
-            </button>
-          </form>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-brand">
-            <div className="logo">
-              <span className="logo-main">Code With Amul</span>
+      <footer className="footer" role="contentinfo">
+        <div className="container">
+          <div className="footer-content">
+            <div className="footer-brand">
+              <div className="logo">
+                <Code size={24} className="logo-icon" />
+                <div>
+                  <h3 className="footer-logo-title">Code With Amul</h3>
+                  <p className="footer-tagline">Empowering developers through practical education</p>
+                </div>
+              </div>
+              <p className="footer-description">
+                A comprehensive programming blog focused on modern web development, 
+                best practices, and practical project tutorials.
+              </p>
+              <div className="social-links">
+                {['Twitter', 'GitHub', 'YouTube', 'LinkedIn'].map((platform) => (
+                  <a 
+                    key={platform} 
+                    href="#" 
+                    className="social-link"
+                    aria-label={`Follow us on ${platform}`}
+                  >
+                    {platform}
+                  </a>
+                ))}
+              </div>
             </div>
-            <p>A community-driven blog for modern web developers.</p>
-            <div className="social-links">
-              {['Twitter', 'GitHub', 'Discord', 'LinkedIn'].map((platform) => (
-                <a key={platform} href="#" className="social-link">
-                  {platform}
-                </a>
-              ))}
+            
+            <div className="footer-links-grid">
+              <div className="link-column">
+                <h4>Content</h4>
+                <ul>
+                  {['All Articles', 'Tutorials', 'Projects', 'Cheatsheets', 'Newsletter'].map((link) => (
+                    <li key={link}>
+                      <a href="#">{link}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="link-column">
+                <h4>Topics</h4>
+                <ul>
+                  {categories.slice(0, 5).map((cat) => (
+                    <li key={cat.name}>
+                      <a href={`/category/${cat.name.toLowerCase()}`}>{cat.name}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="link-column">
+                <h4>Resources</h4>
+                <ul>
+                  {['Documentation', 'Tools', 'Community', 'Contributors', 'Write for Us'].map((link) => (
+                    <li key={link}>
+                      <a href="#">{link}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
           
-          <div className="footer-links">
-            <div className="link-column">
-              <h4>Content</h4>
-              {['Blog', 'coding', 'Programming', 'Newsletter'].map((link) => (
-                <a key={link} href="#">{link}</a>
-              ))}
+          <div className="footer-bottom">
+            <div className="copyright">
+              <p>© 2025 Code With Amul. All rights reserved.</p>
+              <p>Made with ❤️ for the developer community</p>
             </div>
-            <div className="link-column">
-              <h4>Topics</h4>
-              {categories.slice(0, 5).map((cat) => (
-                <a key={cat.name} href={`/category/${cat.name.toLowerCase()}`}>{cat.name}</a>
-              ))}
+            <div className="footer-legal">
+              <a href="#" aria-label="Privacy Policy">Privacy Policy</a>
+              <a href="#" aria-label="Terms of Service">Terms</a>
+              <a href="#" aria-label="Cookie Policy">Cookies</a>
             </div>
-            <div className="link-column">
-              <h4>Company</h4>
-              {['About', 'Team', 'Contact', 'Write for Us'].map((link) => (
-                <a key={link} href="#">{link}</a>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="footer-bottom">
-          <p>© 2025 Code With Amul All rights reserved</p>
-          <div className="footer-meta">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Cookie Policy</a>
           </div>
         </div>
       </footer>
 
       <style jsx>{`
-        /* Add these new styles */
-        .error-banner {
-          background: #fee;
-          color: #c33;
-          padding: 1rem;
-          text-align: center;
-          border-bottom: 1px solid #fcc;
+        /* Reset and Base Styles */
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
 
-        .loading-container {
+        :root {
+          --primary: #2563eb;
+          --primary-dark: #1d4ed8;
+          --secondary: #7c3aed;
+          --text: #1e293b;
+          --text-light: #64748b;
+          --text-lighter: #94a3b8;
+          --background: #ffffff;
+          --background-alt: #f8fafc;
+          --border: #e2e8f0;
+          --border-light: #f1f5f9;
+          --success: #10b981;
+          --warning: #f59e0b;
+          --danger: #ef4444;
+          --radius: 0.5rem;
+          --radius-lg: 0.75rem;
+          --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          line-height: 1.6;
+          color: var(--text);
+          background: var(--background);
+        }
+
+        .container {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+          font-weight: 700;
+          line-height: 1.2;
+          color: var(--text);
+        }
+
+        h1 { font-size: 3.5rem; }
+        h2 { font-size: 2.5rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.125rem; }
+
+        @media (max-width: 768px) {
+          h1 { font-size: 2.5rem; }
+          h2 { font-size: 2rem; }
+          h3 { font-size: 1.25rem; }
+        }
+
+        /* Buttons */
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          border-radius: var(--radius);
+          font-weight: 600;
+          font-size: 0.875rem;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          border: 2px solid transparent;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: white;
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+          background: transparent;
+          border-color: var(--border);
+          color: var(--text);
+        }
+
+        .btn-secondary:hover {
+          background: var(--background-alt);
+          border-color: var(--text-lighter);
+        }
+
+        .btn-outline {
+          background: transparent;
+          border: 2px solid var(--border);
+          color: var(--text);
+        }
+
+        .btn-outline:hover {
+          background: var(--background-alt);
+          border-color: var(--text-lighter);
+        }
+
+        .btn-subscribe {
+          background: var(--text);
+          color: white;
+        }
+
+        .btn-subscribe:hover {
+          background: var(--primary);
+        }
+
+        .btn-load-more {
+          width: 100%;
+          padding: 1rem;
+          background: var(--background-alt);
+          color: var(--text);
+          border: 1px solid var(--border);
+        }
+
+        .btn-load-more:hover {
+          background: var(--border-light);
+        }
+
+        /* Header */
+        .header {
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid var(--border);
+        }
+
+        .header-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem 0;
+          gap: 2rem;
+        }
+
+        .logo-section {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .logo-icon {
+          color: var(--primary);
+        }
+
+        .logo-title {
+          font-size: 1.5rem;
+          font-weight: 800;
+          margin: 0;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtitle {
+          font-size: 0.75rem;
+          color: var(--text-light);
+          margin: 0;
+        }
+
+        .main-nav .nav-links {
+          display: flex;
+          gap: 2rem;
+          list-style: none;
+        }
+
+        .nav-link {
+          color: var(--text);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 0.875rem;
+          padding: 0.5rem 0;
+          position: relative;
+        }
+
+        .nav-link:hover {
+          color: var(--primary);
+        }
+
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          transform: scaleX(0);
+          transition: transform 0.2s ease;
+        }
+
+        .nav-link:hover::after {
+          transform: scaleX(1);
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .search-form {
+          position: relative;
+        }
+
+        .search-input-group {
+          position: relative;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--text-lighter);
+        }
+
+        .search-form input {
+          padding: 0.75rem 1rem 0.75rem 2.5rem;
+          border: 2px solid var(--border);
+          border-radius: var(--radius);
+          width: 240px;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+        }
+
+        .search-form input:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Hero Section */
+        .hero-section {
+          padding: 4rem 0;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .hero-content {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4rem;
+          align-items: center;
+        }
+
+        .hero-text {
+          max-width: 600px;
+        }
+
+        .category-badge {
+          margin-bottom: 1.5rem;
+        }
+
+        .badge {
+          display: inline-block;
+          padding: 0.375rem 0.75rem;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: white;
+          border-radius: 2rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+        }
+
+        .hero-title {
+          margin-bottom: 1.5rem;
+        }
+
+        .hero-description {
+          font-size: 1.125rem;
+          color: var(--text-light);
+          margin-bottom: 2rem;
+          line-height: 1.7;
+        }
+
+        .hero-meta {
+          display: flex;
+          gap: 1.5rem;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+        }
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--text-light);
+          font-size: 0.875rem;
+        }
+
+        .hero-cta {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .hero-visual {
+          position: relative;
+        }
+
+        .code-preview {
+          background: #1e293b;
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-xl);
+        }
+
+        .code-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem 1.5rem;
+          background: #0f172a;
+          border-bottom: 1px solid #334155;
+        }
+
+        .code-dots {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+        }
+
+        .dot.red { background: #ef4444; }
+        .dot.yellow { background: #f59e0b; }
+        .dot.green { background: #10b981; }
+
+        .code-title {
+          color: #cbd5e1;
+          font-family: 'Monaco', 'Menlo', monospace;
+          font-size: 0.875rem;
+        }
+
+        .code-snippet {
+          padding: 1.5rem;
+          margin: 0;
+          overflow-x: auto;
+        }
+
+        .code-snippet code {
+          color: #e2e8f0;
+          font-family: 'Monaco', 'Menlo', monospace;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        /* Featured Section */
+        .featured-section {
+          padding: 4rem 0;
+        }
+
+        .section-header {
+          text-align: center;
+          margin-bottom: 3rem;
+        }
+
+        .section-title {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+          color: var(--text-light);
+          font-size: 1.125rem;
+        }
+
+        .featured-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+        }
+
+        .featured-card {
+          background: white;
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-md);
+          transition: all 0.3s ease;
+          height: 100%;
+        }
+
+        .featured-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-xl);
+        }
+
+        .card-image {
+          height: 200px;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          position: relative;
+        }
+
+        .image-container {
+          position: relative;
+          height: 100%;
+          width: 100%;
+        }
+
+        .category-tag {
+          position: absolute;
+          top: 1rem;
+          left: 1rem;
+          background: white;
+          color: var(--primary);
+          padding: 0.25rem 0.75rem;
+          border-radius: 2rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .card-stats {
+          position: absolute;
+          bottom: 1rem;
+          left: 1rem;
+          right: 1rem;
+          display: flex;
+          gap: 1rem;
+          color: white;
+          font-size: 0.75rem;
+        }
+
+        .stat {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          opacity: 0.9;
+        }
+
+        .card-content {
+          padding: 1.5rem;
+        }
+
+        .card-meta {
+          display: flex;
+          justify-content: space-between;
+          color: var(--text-light);
+          font-size: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .card-title {
+          margin-bottom: 0.75rem;
+          font-size: 1.25rem;
+        }
+
+        .card-excerpt {
+          color: var(--text-light);
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin-bottom: 1rem;
+        }
+
+        .card-tags {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.25rem 0.5rem;
+          background: var(--background-alt);
+          color: var(--text-light);
+          border-radius: 2rem;
+          font-size: 0.75rem;
+        }
+
+        .card-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 1rem;
+          border-top: 1px solid var(--border);
+        }
+
+        .read-more {
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .icon-btn {
+          background: none;
+          border: none;
+          color: var(--text-lighter);
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 0.25rem;
+        }
+
+        .icon-btn:hover {
+          color: var(--primary);
+          background: var(--background-alt);
+        }
+
+        /* Main Content Layout */
+        .main-content {
+          padding: 4rem 0;
+          background: var(--background-alt);
+        }
+
+        .content-layout {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 3rem;
+        }
+
+        /* Recent Section */
+        .recent-section {
+          background: white;
+          padding: 2rem;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-md);
+        }
+
+        .recent-section .section-header {
+          text-align: left;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 2rem;
+        }
+
+        .filter-tabs {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .filter-tab {
+          padding: 0.5rem 1rem;
+          background: var(--background-alt);
+          border: 1px solid var(--border);
+          border-radius: 2rem;
+          font-size: 0.875rem;
+          color: var(--text-light);
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .filter-tab.active {
+          background: var(--primary);
+          color: white;
+          border-color: var(--primary);
+        }
+
+        .filter-tab:hover:not(.active) {
+          background: var(--border-light);
+        }
+
+        .articles-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .article-card {
+          padding: 1.5rem;
+          background: var(--background);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          transition: all 0.2s;
+        }
+
+        .article-card:hover {
+          border-color: var(--primary);
+          box-shadow: var(--shadow-md);
+        }
+
+        .article-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        }
+
+        .article-category {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--primary);
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+
+        .article-date {
+          color: var(--text-light);
+          font-size: 0.875rem;
+        }
+
+        .article-title {
+          margin-bottom: 0.75rem;
+        }
+
+        .article-title a {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .article-title a:hover {
+          color: var(--primary);
+        }
+
+        .article-excerpt {
+          color: var(--text-light);
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin-bottom: 1rem;
+        }
+
+        .article-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .article-meta {
+          display: flex;
+          gap: 1rem;
+          color: var(--text-light);
+          font-size: 0.75rem;
+        }
+
+        .author, .reading-time {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .article-link {
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .load-more-container {
+          margin-top: 3rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        .sidebar-widget {
+          background: white;
+          padding: 1.5rem;
+          border-radius: var(--radius);
+          box-shadow: var(--shadow-md);
+        }
+
+        .widget-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .widget-header h3 {
+          margin: 0;
+        }
+
+        .categories-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .category-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem;
+          color: var(--text);
+          text-decoration: none;
+          border-radius: var(--radius);
+          transition: all 0.2s;
+        }
+
+        .category-item:hover {
+          background: var(--background-alt);
+          color: var(--primary);
+        }
+
+        .category-info {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .category-count {
+          background: var(--background-alt);
+          padding: 0.25rem 0.5rem;
+          border-radius: 2rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-light);
+        }
+
+        .trending-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .trending-item {
+          display: flex;
+          gap: 1rem;
+          text-decoration: none;
+          color: inherit;
+          padding: 0.75rem;
+          border-radius: var(--radius);
+          transition: background 0.2s;
+        }
+
+        .trending-item:hover {
+          background: var(--background-alt);
+        }
+
+        .trending-rank {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: white;
+          border-radius: var(--radius);
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
+        .trending-content h4 {
+          font-size: 0.875rem;
+          margin-bottom: 0.25rem;
+          line-height: 1.4;
+        }
+
+        .trending-meta {
+          color: var(--text-light);
+          font-size: 0.75rem;
+        }
+
+        .tags-cloud {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .tag-item {
+          padding: 0.375rem 0.75rem;
+          background: var(--background-alt);
+          color: var(--text-light);
+          border-radius: 2rem;
+          text-decoration: none;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+        }
+
+        .tag-item:hover {
+          background: var(--primary);
+          color: white;
+        }
+
+        .newsletter-widget {
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: white;
+        }
+
+        .newsletter-widget h3,
+        .newsletter-widget p {
+          color: white;
+        }
+
+        .newsletter-widget p {
+          opacity: 0.9;
+          margin-bottom: 1rem;
+        }
+
+        .subscribe-form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .subscribe-form input {
+          padding: 0.75rem;
+          border: none;
+          border-radius: var(--radius);
+          font-size: 0.875rem;
+        }
+
+        .subscribe-form input:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        /* CTA Section */
+        .cta-section {
+          padding: 6rem 0;
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          color: white;
+        }
+
+        .cta-content {
+          max-width: 600px;
+          margin: 0 auto;
+          text-align: center;
+        }
+
+        .cta-icon-wrapper {
+          margin-bottom: 1.5rem;
+        }
+
+        .cta-content h2 {
+          color: white;
+          margin-bottom: 1rem;
+        }
+
+        .cta-content p {
+          color: #cbd5e1;
+          font-size: 1.125rem;
+          margin-bottom: 2rem;
+          line-height: 1.6;
+        }
+
+        .cta-form {
+          max-width: 480px;
+          margin: 0 auto;
+        }
+
+        .input-group {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .cta-form input {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border: 2px solid #475569;
+          background: transparent;
+          color: white;
+          border-radius: var(--radius);
+          font-size: 1rem;
+        }
+
+        .cta-form input:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
+
+        .form-note {
+          color: #94a3b8;
+          font-size: 0.75rem;
+        }
+
+        /* Footer */
+        .footer {
+          background: var(--background);
+          border-top: 1px solid var(--border);
+          padding: 4rem 0 2rem;
+        }
+
+        .footer-content {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 4rem;
+          margin-bottom: 3rem;
+        }
+
+        .footer-brand .logo {
+          margin-bottom: 1rem;
+        }
+
+        .footer-logo-title {
+          font-size: 1.5rem;
+          margin: 0;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .footer-tagline {
+          color: var(--text-light);
+          font-size: 0.875rem;
+          margin: 0.25rem 0 1rem;
+        }
+
+        .footer-description {
+          color: var(--text-light);
+          line-height: 1.6;
+          margin-bottom: 1.5rem;
+        }
+
+        .social-links {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .social-link {
+          color: var(--text);
+          text-decoration: none;
+          font-size: 0.875rem;
+          transition: color 0.2s;
+        }
+
+        .social-link:hover {
+          color: var(--primary);
+        }
+
+        .footer-links-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+        }
+
+        .link-column h4 {
+          margin-bottom: 1rem;
+          font-size: 1rem;
+        }
+
+        .link-column ul {
+          list-style: none;
+        }
+
+        .link-column li {
+          margin-bottom: 0.5rem;
+        }
+
+        .link-column a {
+          color: var(--text-light);
+          text-decoration: none;
+          font-size: 0.875rem;
+          transition: color 0.2s;
+        }
+
+        .link-column a:hover {
+          color: var(--primary);
+        }
+
+        .footer-bottom {
+          padding-top: 2rem;
+          border-top: 1px solid var(--border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: var(--text-light);
+          font-size: 0.875rem;
+        }
+
+        .copyright p {
+          margin: 0.25rem 0;
+        }
+
+        .footer-legal {
+          display: flex;
+          gap: 1.5rem;
+        }
+
+        .footer-legal a {
+          color: var(--text-light);
+          text-decoration: none;
+        }
+
+        .footer-legal a:hover {
+          color: var(--primary);
+        }
+
+        /* Loading States */
+        .loading-state {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           padding: 3rem;
-          color: #666;
+          color: var(--text-light);
+          text-align: center;
         }
 
         .loading-small {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          color: #666;
+          color: var(--text-light);
           padding: 1rem;
         }
 
@@ -731,898 +1880,37 @@ function GetStarted() {
           to { transform: rotate(360deg); }
         }
 
-        .hero-main-image {
-          width: 100%;
-          height: auto;
-          border-radius: 8px;
-          object-fit: cover;
-        }
-
-        /* Rest of your existing styles remain the same */
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        .blog-landing-page {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-          background: #ffffff;
-          color: #1a1a1a;
-          line-height: 1.6;
-        }
-
-        /* Navigation */
-        .navbar {
-          position: sticky;
-          top: 0;
-          background: rgba(255, 255, 255, 0.98);
-          backdrop-filter: blur(10px);
-          z-index: 1000;
-          border-bottom: 1px solid #f0f0f0;
-          padding: 1rem 0;
-        }
-
-        .nav-container {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 2rem;
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-        }
-
-        .logo {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-          font-weight: 700;
-          font-size: 1.5rem;
-        }
-
-        .logo-main {
-          color: #1a1a1a;
-        }
-
-        .logo-dot {
-          color: #3b82f6;
-          font-size: 2rem;
-        }
-
-        .search-container {
-          flex: 1;
-          max-width: 400px;
-        }
-
-        .search-form {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .search-form svg {
-          position: absolute;
-          left: 1rem;
-          color: #666;
-        }
-
-        .search-form input {
-          width: 100%;
-          padding: 0.75rem 1rem 0.75rem 2.5rem;
-          border: 2px solid #e5e7eb;
-          border-radius: 8px;
-          font-size: 0.95rem;
-          transition: all 0.2s;
-        }
-
-        .search-form input:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .nav-menu {
-          display: flex;
-          gap: 2rem;
-          list-style: none;
-        }
-
-        .nav-menu li a {
-          color: #4b5563;
-          text-decoration: none;
-          font-weight: 500;
-          font-size: 0.95rem;
-          transition: color 0.2s;
-        }
-
-        .nav-menu li a:hover {
-          color: #3b82f6;
-        }
-
-        .nav-actions {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-        }
-
-        .btn-login {
-          padding: 0.5rem 1.5rem;
-          background: transparent;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          color: #4b5563;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-login:hover {
-          background: #f9fafb;
-        }
-
-        .btn-primary {
-          padding: 0.5rem 1.5rem;
-          background: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-primary:hover {
-          background: #2563eb;
-          transform: translateY(-1px);
-        }
-
-        /* Hero Section */
-        .hero {
-          max-width: 1280px;
-          margin: 3rem auto;
-          padding: 0 2rem;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4rem;
-          align-items: center;
-        }
-
-        .hero-badge {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .badge {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          color: white;
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .badge-text {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .hero-title {
-          font-size: 3rem;
-          font-weight: 800;
-          line-height: 1.2;
-          margin-bottom: 1.5rem;
-          color: #1f2937;
-        }
-
-        .hero-description {
-          font-size: 1.125rem;
-          color: #4b5563;
-          margin-bottom: 2rem;
-          line-height: 1.7;
-        }
-
-        .hero-meta {
-          display: flex;
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .hero-meta > div {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .hero-tags {
-          display: flex;
-          gap: 0.75rem;
-          flex-wrap: wrap;
-          margin-bottom: 2rem;
-        }
-
-        .tag {
-          background: #f3f4f6;
-          color: #4b5563;
-          padding: 0.375rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
-
-        .btn-hero {
-          padding: 1rem 2rem;
-          font-size: 1rem;
-        }
-
-        .hero-image {
-          position: relative;
-        }
-
-        .image-placeholder {
-          background: linear-gradient(135deg, #1e293b, #0f172a);
-          border-radius: 12px;
-          padding: 2rem;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .code-preview pre {
-          color: #f8fafc;
-          font-family: 'Monaco', 'Menlo', monospace;
-          font-size: 0.875rem;
-          line-height: 1.5;
-          overflow-x: auto;
-        }
-
-        /* Featured Posts */
-        .featured-posts {
-          max-width: 1280px;
-          margin: 4rem auto;
-          padding: 0 2rem;
-        }
-
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .section-header h2 {
-          font-size: 1.875rem;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .view-all {
-          color: #3b82f6;
-          text-decoration: none;
-          font-weight: 500;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .featured-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2rem;
-        }
-
-        .post-card.featured {
-          background: white;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .post-card.featured:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.1);
-        }
-
-        .post-image {
-          height: 200px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          position: relative;
-        }
-
-        .category-badge {
-          position: absolute;
-          top: 1rem;
-          left: 1rem;
-          background: white;
-          color: #3b82f6;
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .image-overlay {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
+        .alert {
           padding: 1rem;
-        }
-
-        .post-stats {
-          display: flex;
-          gap: 1rem;
-          color: white;
-          font-size: 0.875rem;
-        }
-
-        .post-stats span {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .post-content {
-          padding: 1.5rem;
-        }
-
-        .post-meta {
-          display: flex;
-          gap: 1rem;
-          color: #6b7280;
-          font-size: 0.875rem;
-          margin-bottom: 1rem;
-        }
-
-        .post-title {
-          font-size: 1.25rem;
-          font-weight: 700;
-          margin-bottom: 0.75rem;
-          color: #1f2937;
-        }
-
-        .post-excerpt {
-          color: #4b5563;
-          margin-bottom: 1rem;
-          line-height: 1.6;
-        }
-
-        .post-tags {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-          margin-bottom: 1rem;
-        }
-
-        .post-tags .tag {
-          background: #f3f4f6;
-          color: #4b5563;
-          padding: 0.25rem 0.5rem;
-          font-size: 0.75rem;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .post-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .btn-read {
-          color: #3b82f6;
-          background: none;
-          border: none;
-          font-weight: 500;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          text-decoration: none;
-        }
-
-        .action-icons {
-          display: flex;
-          gap: 0.75rem;
-        }
-
-        .action-icons button {
-          background: none;
-          border: none;
-          color: #9ca3af;
-          cursor: pointer;
-          padding: 0.25rem;
-        }
-
-        .action-icons button:hover {
-          color: #3b82f6;
-        }
-
-        /* Main Content */
-        .main-content {
+          border-radius: var(--radius);
+          margin: 1rem auto;
           max-width: 1280px;
-          margin: 4rem auto;
-          padding: 0 2rem;
-        }
-
-        .content-wrapper {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: 3rem;
-        }
-
-        /* Recent Posts */
-        .recent-posts .section-header {
-          margin-bottom: 2rem;
-        }
-
-        .filter-options {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .filter-btn {
-          padding: 0.5rem 1rem;
-          background: #f3f4f6;
-          border: none;
-          border-radius: 20px;
-          color: #4b5563;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .filter-btn.active {
-          background: #3b82f6;
-          color: white;
-        }
-
-        .posts-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .post-card.recent {
-          padding: 1.5rem;
-          background: white;
-          border-radius: 8px;
-          border: 1px solid #e5e7eb;
-          transition: all 0.2s;
-        }
-
-        .post-card.recent:hover {
-          border-color: #3b82f6;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-        }
-
-        .post-header {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 0.75rem;
-        }
-
-        .post-category {
-          color: #3b82f6;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-
-        .post-date {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .post-title {
-          font-size: 1.125rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #1f2937;
-        }
-
-        .post-excerpt {
-          color: #4b5563;
-          font-size: 0.95rem;
-          line-height: 1.6;
-          margin-bottom: 1rem;
-        }
-
-        .post-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .author-info, .post-meta {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .btn-read-sm {
-          color: #3b82f6;
-          background: none;
-          border: none;
-          font-size: 0.875rem;
-          font-weight: 500;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          text-decoration: none;
-        }
-
-        .load-more {
-          text-align: center;
-          margin-top: 3rem;
-        }
-
-        .btn-load {
-          padding: 0.75rem 2rem;
-          background: #f3f4f6;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          color: #4b5563;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-load:hover {
-          background: #e5e7eb;
-        }
-
-        /* Sidebar */
-        .sidebar {
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-        }
-
-        .sidebar-widget {
-          background: white;
-          border-radius: 8px;
-          padding: 1.5rem;
-          border: 1px solid #e5e7eb;
-        }
-
-        .sidebar-widget h3 {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
-          color: #1f2937;
-          font-size: 1.125rem;
-        }
-
-        .categories-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .category-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.75rem;
-          color: #4b5563;
-          text-decoration: none;
-          border-radius: 6px;
-          transition: all 0.2s;
-        }
-
-        .category-item:hover {
-          background: #f9fafb;
-          color: #3b82f6;
-        }
-
-        .category-info {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .category-count {
-          background: #f3f4f6;
-          padding: 0.25rem 0.5rem;
-          border-radius: 12px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .trending-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .trending-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 1rem;
-          text-decoration: none;
-          color: inherit;
-          padding: 0.75rem;
-          border-radius: 6px;
-          transition: background 0.2s;
-        }
-
-        .trending-item:hover {
-          background: #f9fafb;
-        }
-
-        .trending-rank {
-          background: #3b82f6;
-          color: white;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 6px;
-          font-size: 0.875rem;
-          font-weight: 600;
-        }
-
-        .trending-content h4 {
-          font-size: 0.95rem;
-          font-weight: 600;
-          margin-bottom: 0.25rem;
-          color: #1f2937;
-        }
-
-        .trending-views {
-          color: #6b7280;
-          font-size: 0.75rem;
-        }
-
-        .tags-cloud {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .tag-item {
-          background: #f3f4f6;
-          color: #4b5563;
-          padding: 0.375rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-
-        .tag-item:hover {
-          background: #3b82f6;
-          color: white;
-        }
-
-        .newsletter-widget {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          color: white;
-        }
-
-        .newsletter-widget h3 {
-          color: white;
-        }
-
-        .newsletter-widget p {
-          color: rgba(255, 255, 255, 0.9);
-          margin-bottom: 1rem;
-          font-size: 0.95rem;
-        }
-
-        .subscribe-form {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .subscribe-form input {
-          padding: 0.75rem 1rem;
-          border: none;
-          border-radius: 6px;
-          font-size: 0.95rem;
-        }
-
-        .subscribe-form input:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-subscribe {
-          padding: 0.75rem 1rem;
-          background: white;
-          color: #3b82f6;
-          border: none;
-          border-radius: 6px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-subscribe:hover {
-          background: #f3f4f6;
-          transform: translateY(-1px);
-        }
-
-        /* Newsletter CTA */
-        .newsletter-cta {
-          background: linear-gradient(135deg, #1e293b, #0f172a);
-          color: white;
-          padding: 4rem 2rem;
-          margin: 4rem 0;
-        }
-
-        .cta-content {
-          max-width: 600px;
-          margin: 0 auto;
           text-align: center;
         }
 
-        .cta-icon {
-          margin: 0 auto 1.5rem;
-          color: #3b82f6;
-        }
-
-        .cta-content h2 {
-          font-size: 2.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .cta-content p {
-          color: #cbd5e1;
-          font-size: 1.125rem;
-          margin-bottom: 2rem;
-          line-height: 1.6;
-        }
-
-        .cta-form {
-          display: flex;
-          gap: 1rem;
-          max-width: 400px;
-          margin: 0 auto;
-        }
-
-        .cta-form input {
-          flex: 1;
-          padding: 0.75rem 1rem;
-          border: 2px solid #475569;
-          background: transparent;
-          border-radius: 6px;
-          color: white;
-          font-size: 1rem;
-        }
-
-        .cta-form input:focus {
-          outline: none;
-          border-color: #3b82f6;
-        }
-
-        .btn-cta {
-          padding: 0.75rem 2rem;
-          background: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-cta:hover {
-          background: #2563eb;
-          transform: translateY(-1px);
-        }
-
-        /* Footer */
-        .footer {
-          background: #f9fafb;
-          border-top: 1px solid #e5e7eb;
-          padding: 4rem 2rem 2rem;
-        }
-
-        .footer-content {
-          max-width: 1280px;
-          margin: 0 auto;
-          display: grid;
-          grid-template-columns: 1fr 2fr;
-          gap: 4rem;
-          margin-bottom: 3rem;
-        }
-
-        .footer-brand p {
-          color: #6b7280;
-          margin: 1rem 0;
-        }
-
-        .social-links {
-          display: flex;
-          gap: 1rem;
-        }
-
-        .social-link {
-          color: #4b5563;
-          text-decoration: none;
-          font-size: 0.875rem;
-        }
-
-        .social-link:hover {
-          color: #3b82f6;
-        }
-
-        .footer-links {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2rem;
-        }
-
-        .link-column h4 {
-          font-weight: 600;
-          margin-bottom: 1rem;
-          color: #1f2937;
-        }
-
-        .link-column a {
-          display: block;
-          color: #6b7280;
-          text-decoration: none;
-          margin-bottom: 0.75rem;
-          font-size: 0.95rem;
-        }
-
-        .link-column a:hover {
-          color: #3b82f6;
-        }
-
-        .footer-bottom {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding-top: 2rem;
-          border-top: 1px solid #e5e7eb;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .footer-meta {
-          display: flex;
-          gap: 1.5rem;
-        }
-
-        .footer-meta a {
-          color: #6b7280;
-          text-decoration: none;
-        }
-
-        .footer-meta a:hover {
-          color: #3b82f6;
+        .alert-warning {
+          background: #fef3c7;
+          color: #92400e;
+          border: 1px solid #fbbf24;
         }
 
         /* Responsive Design */
         @media (max-width: 1024px) {
-          .hero {
+          .hero-content {
             grid-template-columns: 1fr;
-            text-align: center;
             gap: 3rem;
+            text-align: center;
+          }
+
+          .hero-cta {
+            justify-content: center;
           }
 
           .featured-grid {
             grid-template-columns: repeat(2, 1fr);
           }
 
-          .content-wrapper {
+          .content-layout {
             grid-template-columns: 1fr;
           }
 
@@ -1633,34 +1921,38 @@ function GetStarted() {
         }
 
         @media (max-width: 768px) {
-          .nav-container {
-            flex-wrap: wrap;
+          .header-content {
+            flex-direction: column;
             gap: 1rem;
+            text-align: center;
           }
 
-          .search-container {
-            order: 3;
+          .main-nav .nav-links {
+            justify-content: center;
+          }
+
+          .header-actions {
             width: 100%;
-            max-width: 100%;
           }
 
-          .nav-menu {
-            display: none;
-          }
-
-          .hero-title {
-            font-size: 2.5rem;
+          .search-form input {
+            width: 100%;
           }
 
           .featured-grid {
             grid-template-columns: 1fr;
           }
 
-          .cta-form {
+          .recent-section .section-header {
+            flex-direction: column;
+            gap: 1rem;
+          }
+
+          .input-group {
             flex-direction: column;
           }
 
-          .footer-links {
+          .footer-links-grid {
             grid-template-columns: repeat(2, 1fr);
           }
 
@@ -1672,20 +1964,15 @@ function GetStarted() {
         }
 
         @media (max-width: 480px) {
-          .hero-title {
-            font-size: 2rem;
-          }
-
-          .hero-meta {
+          .hero-cta {
             flex-direction: column;
-            gap: 0.75rem;
           }
 
-          .filter-options {
-            flex-wrap: wrap;
+          .filter-tabs {
+            justify-content: center;
           }
 
-          .footer-links {
+          .footer-links-grid {
             grid-template-columns: 1fr;
           }
         }

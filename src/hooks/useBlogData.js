@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
     fetchFeaturedPosts,
     fetchRecentPosts,
-    fetchCategories,
-    fetchTags,
-    searchBlogs,
-    filterByCategory
+    fetchCategories
 } from '../middleware/api';
 import { getCategoryIcon } from '../middleware/helpers';
 
@@ -37,19 +34,16 @@ function useBlogData() {
       const [
         featuredData,
         recentData,
-        categoriesData,
-        tagsData
+        categoriesData
       ] = await Promise.all([
         fetchFeaturedPosts(),
         fetchRecentPosts(),
-        fetchCategories(),
-        fetchTags()
+        fetchCategories()
       ]);
 
       setFeaturedPosts(featuredData);
       setRecentPosts(recentData.slice(0, 7));
 
-      // Process categories
       const mappedCategories = categoriesData.map(cat => ({
         name: cat?.Category || 'Unknown',
         icon: getCategoryIcon(cat?.Category),
@@ -57,7 +51,6 @@ function useBlogData() {
       }));
       setCategories(mappedCategories);
 
-      // Process tags
       const tagCounts = {};
       
       recentData.forEach(post => {
@@ -74,7 +67,6 @@ function useBlogData() {
         .map(([tag]) => tag);
       setPopularTags(sortedTags);
 
-      // Generate trending posts
       const trendingData = recentData.slice(0, 3).map((post, index) => ({
         id: post?.id || index,
         title: post?.title || 'Untitled Post',
@@ -86,7 +78,6 @@ function useBlogData() {
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load data. Please try again later.');
-      // Fallback to mock data would go here
     } finally {
       setLoading({
         featured: false,
@@ -115,34 +106,6 @@ function useBlogData() {
     }
   }, [refreshTrigger, fetchAllData]);
 
-  const handleSearch = async (query, e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
-    try {
-      const searchResults = await searchBlogs(query);
-      if (Array.isArray(searchResults) && searchResults.length > 0) {
-        setRecentPosts(searchResults);
-        alert(`Found ${searchResults.length} results for "${query}"`);
-      } else {
-        alert(`No results found for "${query}"`);
-      }
-    } catch (err) {
-      console.error('Search error:', err);
-      alert('Search failed. Please try again.');
-    }
-  };
-
-  const handleFilter = async (category) => {
-    try {
-      const filteredPosts = await filterByCategory(category);
-      setRecentPosts(filteredPosts.slice(0, 7));
-    } catch (err) {
-      console.error('Filter error:', err);
-      // Handle fallback
-    }
-  };
-
   const handleManualRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
   };
@@ -155,8 +118,6 @@ function useBlogData() {
     trendingPosts,
     loading,
     error,
-    handleSearch,
-    handleFilter,
     handleManualRefresh,
     fetchAllData
   };

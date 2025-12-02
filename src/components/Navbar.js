@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Moon, Sun } from 'lucide-react';
 import SearchBar from '../config/SearchBar';
+import { useTheme } from '../context/ThemeContext';
 
 function Navbar({ onSearch, onRefresh }) {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -54,12 +57,13 @@ function Navbar({ onSearch, onRefresh }) {
         </ul>
         
         <button 
-          className="btn-refresh"
-          onClick={onRefresh}
-          title="Refresh content from admin panel"
+          className="btn-theme-toggle"
+          onClick={toggleTheme}
+          title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
         >
-          ↻
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
+        
       </div>
 
       <style jsx>{`
