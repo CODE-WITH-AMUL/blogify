@@ -63,6 +63,18 @@ const LandingPage = () => {
   const [popularTags, setPopularTags] = useState([]);
   const [trendingPosts, setTrendingPosts] = useState([]);
 
+  const getPostsFromResponse = (response) => {
+    if (response && response.data) {
+      if (Array.isArray(response.data.results)) {
+        return response.data.results;
+      }
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+    }
+    return [];
+  };
+
   useEffect(() => {
     fetchAllData();
   }, []);

@@ -20,7 +20,12 @@ DEBUG=env('DEBUG_KEY')
 
 
 #-------------------[HOSTING SITES]-------------------#
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*']
+ALLOWED_HOSTS = [
+    'amulsharma.com.np',
+    'www.amulsharma.com.np',
+    '127.0.0.1',
+    'localhost',
+]
 
 
 #-------------------[APPLICATION CONFIG]-------------------#
@@ -50,10 +55,10 @@ INSTALLED_APPS += EXTRA_APPS
 
 
 #-------------------[CROSS SITES]-------------------#
-
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 #-------------------[MIDDLEWARE MODULES]-------------------#
 
@@ -98,12 +103,15 @@ WSGI_APPLICATION = 'blogify.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
+        'NAME': os.path.join(BASE_DIR, os.getenv("DB_NAME", "db.sqlite3")),
     }
 }
+
 
 
 # Password validation
