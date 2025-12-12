@@ -3,11 +3,11 @@
 const API_ENDPOINTS = {
   // Blog endpoints
   BLOG: {
-    LIST: '/api/blogs/',
-    DETAIL: (slug) => `/api/blogs/${slug}/`,
-    SEARCH: '/api/blogs/?search=',
-    BY_CATEGORY: (category) => `/api/blogs/?category=${category}`,
-    BY_TAG: (tag) => `/api/blogs/?tag=${tag}`,
+    LIST: '/api/posts/',
+    DETAIL: (slug) => `/api/posts/${slug}/`,
+    SEARCH: '/api/posts/?search=',
+    BY_CATEGORY: (category) => `/api/posts/?category=${category}`,
+    BY_TAG: (tag) => `/api/posts/?tag=${tag}`,
   },
   
   // Category endpoints

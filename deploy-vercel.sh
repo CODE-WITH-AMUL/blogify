@@ -1,31 +1,61 @@
 #!/bin/bash
+# fix-vercel-deploy.sh
 
-echo " Starting Vercel Deployment..."
+echo "🔧 Fixing Vercel deployment..."
 
-# Step 1: Clean up
-echo " Cleaning up..."
-rm -rf dist
-rm -rf node_modules
+# 1. Install dompurify
+npm install dompurify
 
-# Step 2: Install dependencies
-echo " Installing dependencies..."
-npm install --legacy-peer-deps
+# 2. Remove react-scripts if exists
+npm uninstall react-scripts
 
-# Step 3: Build the project
-echo " Building project..."
-npm run build
+# 3. Install Vite
+npm install -D vite @vitejs/plugin-react
 
-# Step 4: Check build
-if [ -d "dist" ]; then
-    echo " Build successful! Size:"
-    du -sh dist/
-else
-    echo " Build failed!"
-    exit 1
-fi
+# 4. Create vite.config.js
+cat > vite.config.js << 'EOF'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-# Step 5: Deploy to Vercel
-echo " Deploying to Vercel..."
-vercel --prod --confirm
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'https://codewithamul-blogify.onrender.com',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false
+  }
+})
+EOF
 
-echo " Deployment complete!"
+# 5. Update package.json scripts
+npm pkg set scripts.dev="vite"
+npm pkg set scripts.build="vite build"
+npm pkg set scripts.preview="vite preview"
+npm pkg set scripts.start="vite"
+
+# 6. Create .vercelignore
+cat > .vercelignore << 'EOF'
+backend/
+requirements.txt
+manage.py
+db.sqlite3
+*.py
+*.pyc
+__pycache__/
+env/
+.vscode/
+.DS_Store
+EOF
+
+echo "✅ Vercel deployment fixed!"
+echo "📦 Run: npm run build"
+echo "🚀 Then deploy to Vercel"

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Use Vercel environment variable or fallback to Render backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-                     process.env.REACT_APP_API_BASE_URL || 
-                     'https://codewithamul-blogify.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
+  process.env.REACT_APP_API_BASE_URL ||
+  'https://codewithamul-blogify.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -21,12 +21,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Log in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -47,6 +47,9 @@ api.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           console.error('Unauthorized: Please login again');
+          localStorage.removeItem('auth_token');
+          // Optionally, redirect to login page
+          // window.location.href = '/login';
           break;
         case 403:
           console.error('Forbidden: You do not have permission');
@@ -57,6 +60,8 @@ api.interceptors.response.use(
         case 500:
           console.error('Server Error: Backend server issue');
           break;
+        default:
+          console.error(`Unhandled error: ${error.response.status}`);
       }
     }
     

@@ -50,14 +50,14 @@ if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
 
 # Security settings for production only
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
     SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
 
 #====================[APPLICATION CONFIG]====================#
 INSTALLED_APPS = [
@@ -119,25 +119,13 @@ WSGI_APPLICATION = "blogify.wsgi.application"
 
 #====================[DATABASE CONFIGURATION]====================#
 # Use DATABASE_URL if available (Render provides this), otherwise use sqlite
-if 'DATABASE_URL' in os.environ:
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600
-        )
+
+DATABASES = {
+    "default": {
+        "ENGINE": os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        "NAME": os.environ.get('DB_NAME', os.path.join(BASE_DIR, "db.sqlite3")),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-            "NAME": os.environ.get('DB_NAME', os.path.join(BASE_DIR, "db.sqlite3")),
-            "USER": os.environ.get('DB_USER', ''),
-            "PASSWORD": os.environ.get('DB_PASSWORD', ''),
-            "HOST": os.environ.get('DB_HOST', ''),
-            "PORT": os.environ.get('DB_PORT', ''),
-        }
-    }
+}
 
 #====================[AUTH PASSWORD VALIDATORS]====================#
 AUTH_PASSWORD_VALIDATORS = [

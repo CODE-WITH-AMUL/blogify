@@ -74,7 +74,7 @@ const BlogList = () => {
       setError(null);
       
       // FIXED: Use correct API endpoint for blogs
-      const response = await api.get('/api/blogs/');
+      const response = await api.get('/api/posts/');
       
       let postsData = [];
       

@@ -1,8 +1,12 @@
 from rest_framework import generics
 from rest_framework.response import Response
 from django.db.models import Q
-from .models import Post
-from .serializers import PostSerializer
+from .models import Post, Category
+from .serializers import PostSerializer, CategorySerializer
+
+class CategoryList(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 class PostList(generics.ListAPIView):
     serializer_class = PostSerializer

@@ -57,7 +57,7 @@ export const useBlogs = () => {
 
   const fetchBlogs = async (params = {}) => {
     try {
-      const data = await callApi(api.get, '/api/blogs/', { params });
+      const data = await callApi(api.get, '/api/posts/', { params });
       setBlogs(data.results || data);
       return data;
     } catch (err) {

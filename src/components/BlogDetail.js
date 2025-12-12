@@ -1,4 +1,4 @@
-// src/pages/BlogDetail.js (Fixed - No DOMPurify dependency)
+// src/components/BlogDetail.js (Enhanced: TOC Links Now Functional, CSS Classes Added for Beauty, All Fixes Applied)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -52,7 +52,8 @@ import {
 } from '@mui/icons-material';
 import api from '../api/axiosInstance';
 
-// Simple HTML sanitizer function (remove if you install DOMPurify later)
+
+// Enhanced HTML sanitizer: Adds IDs to headings for TOC functionality
 const sanitizeHTML = (html) => {
   if (!html) return '';
   
@@ -67,18 +68,12 @@ const sanitizeHTML = (html) => {
     Array.from(elements).forEach(el => el.remove());
   });
   
-  // Remove event handlers
-  const allElements = tempDiv.getElementsByTagName('*');
-  Array.from(allElements).forEach(el => {
-    Array.from(el.attributes).forEach(attr => {
-      if (attr.name.startsWith('on')) {
-        el.removeAttribute(attr.name);
-      }
-      // Remove javascript: from href
-      if (attr.name === 'href' && attr.value.startsWith('javascript:')) {
-        el.removeAttribute('href');
-      }
-    });
+  // FIXED: Add IDs to headings for TOC links (h2, h3, h4)
+  const headings = tempDiv.querySelectorAll('h2, h3, h4');
+  headings.forEach((heading, index) => {
+    const level = parseInt(heading.tagName.charAt(1));
+    const id = `section-${index}`;
+    heading.id = id;
   });
   
   return tempDiv.innerHTML;
@@ -102,23 +97,26 @@ const BlogDetail = () => {
       setLoading(true);
       setError(null);
       
-      // FIXED: Use correct API endpoint for blogs
-      const response = await api.get(`/api/blogs/${slug}/`);
+      const response = await api.get(`/api/posts/${slug}/`);
       
-      if (response.data) {
-        setPost(response.data);
-        
-        // Check if user has liked/bookmarked
-        const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
-        const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
-        
-        setIsLiked(savedLikes.includes(response.data.id));
-        setIsBookmarked(savedBookmarks.includes(response.data.id));
+      if (!response) {
+        throw new Error('No response received from server');
       }
+      if (!response.data) {
+        throw new Error('Invalid response: No data received from server');
+      }
+      
+      setPost(response.data);
+      
+      // Check if user has liked/bookmarked
+      const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
+      const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
+      
+      setIsLiked(savedLikes.includes(response.data.id));
+      setIsBookmarked(savedBookmarks.includes(response.data.id));
     } catch (err) {
       console.error('Error fetching blog post:', err);
       
-      // Better error messages based on status code
       if (err.response?.status === 404) {
         setError('Blog post not found. It may have been removed or the URL is incorrect.');
       } else if (err.response?.status === 500) {
@@ -126,7 +124,7 @@ const BlogDetail = () => {
       } else if (err.code === 'ERR_NETWORK') {
         setError('Cannot connect to server. Please check your internet connection.');
       } else {
-        setError('Failed to load the blog post. Please try again.');
+        setError(err.message || 'Failed to load the blog post. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -136,29 +134,48 @@ const BlogDetail = () => {
   // Fetch related posts
   const fetchRelatedPosts = useCallback(async () => {
     try {
-      const response = await api.get('/api/blogs/', {
+      if (!post?.id) {
+        setRelatedPosts([]);
+        return;
+      }
+
+      const response = await api.get('/api/posts/', {
         params: {
           limit: 3,
-          exclude: post?.id
         }
       });
       
-      if (response.data && Array.isArray(response.data)) {
-        // Filter by category if available
-        if (post?.category) {
-          const related = response.data.filter(blog => {
-            const blogCategory = typeof blog.category === 'object' ? blog.category?.id : blog.category;
-            const postCategory = typeof post.category === 'object' ? post.category?.id : post.category;
-            return blogCategory === postCategory && blog.id !== post.id;
-          });
-          setRelatedPosts(related.slice(0, 3));
-        } else {
-          setRelatedPosts(response.data.slice(0, 3));
-        }
+      if (!response) {
+        console.warn('No response for related posts');
+        setRelatedPosts([]);
+        return;
       }
+      if (!response.data || !Array.isArray(response.data)) {
+        console.warn('Invalid related posts data:', response.data);
+        setRelatedPosts([]);
+        return;
+      }
+      
+      let filteredPosts = response.data;
+      
+      // Filter by category if available (client-side fallback)
+      if (post?.category) {
+        const postCategory = typeof post.category === 'object' ? post.category?.id : post.category;
+        filteredPosts = response.data.filter(blog => {
+          const blogCategory = typeof blog.category === 'object' ? blog.category?.id : blog.category;
+          return blogCategory === postCategory && blog.id !== post.id;
+        });
+      }
+      
+      // Exclude current post and limit to 3
+      const related = filteredPosts
+        .filter(blog => blog.id !== post.id)
+        .slice(0, 3);
+      
+      setRelatedPosts(related);
     } catch (err) {
       console.error('Error fetching related posts:', err);
-      // Silently fail for related posts
+      setRelatedPosts([]);
     }
   }, [post]);
 
@@ -177,11 +194,9 @@ const BlogDetail = () => {
     if (!content) return [];
     
     try {
-      // Create a temporary div to parse HTML
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = content;
       
-      // Find all headings (h2, h3, h4)
       const headings = Array.from(tempDiv.querySelectorAll('h2, h3, h4'));
       
       return headings.map((heading, index) => {
@@ -207,11 +222,9 @@ const BlogDetail = () => {
       const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
       
       if (isLiked) {
-        // Unlike
         const updatedLikes = savedLikes.filter(id => id !== post.id);
         localStorage.setItem('blog_likes', JSON.stringify(updatedLikes));
       } else {
-        // Like
         savedLikes.push(post.id);
         localStorage.setItem('blog_likes', JSON.stringify(savedLikes));
       }
@@ -235,11 +248,9 @@ const BlogDetail = () => {
       const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
       
       if (isBookmarked) {
-        // Remove bookmark
         const updatedBookmarks = savedBookmarks.filter(id => id !== post.id);
         localStorage.setItem('blog_bookmarks', JSON.stringify(updatedBookmarks));
       } else {
-        // Add bookmark
         savedBookmarks.push(post.id);
         localStorage.setItem('blog_bookmarks', JSON.stringify(savedBookmarks));
       }
@@ -280,7 +291,6 @@ const BlogDetail = () => {
     if (!content) return '3 min read';
     
     try {
-      // Strip HTML tags and count words
       const text = content.replace(/<[^>]*>/g, ' ');
       const words = text.split(/\s+/).filter(word => word.length > 0).length;
       const minutes = Math.ceil(words / 200);
@@ -308,7 +318,7 @@ const BlogDetail = () => {
         justifyContent: 'center',
         alignItems: 'center'
       }}>
-        <CircularProgress size={60} thickness={4} />
+        <CircularProgress size={60} thickness={4} className="blog-spinner" />
         <Typography variant="h6" sx={{ mt: 3, color: 'text.secondary' }}>
           Loading blog post...
         </Typography>
@@ -410,7 +420,7 @@ const BlogDetail = () => {
   // Generate TOC
   const tocItems = generateTOC(post.content);
 
-  // Sanitize HTML content
+  // Sanitize HTML content (now with IDs added)
   const sanitizedContent = sanitizeHTML(post.content || '');
 
   return (
@@ -480,7 +490,7 @@ const BlogDetail = () => {
 
             {/* Featured Image */}
             {post.featured_image && (
-              <Box sx={{
+              <Box className="blog-image-overlay" sx={{
                 mb: 5,
                 borderRadius: 3,
                 overflow: 'hidden',
@@ -505,7 +515,7 @@ const BlogDetail = () => {
             )}
 
             {/* Title */}
-            <Typography variant="h1" sx={{
+            <Typography variant="h1" className="blog-title" sx={{
               fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               fontWeight: 800,
               mb: 3,
@@ -550,7 +560,7 @@ const BlogDetail = () => {
                         {calculateReadTime(post.content)}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: '-flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <EyeIcon sx={{ fontSize: 16 }} />
                       <Typography variant="body2">
                         {(post.views || 0).toLocaleString()} views
@@ -592,6 +602,7 @@ const BlogDetail = () => {
                       label={typeof tag === 'string' ? tag : tag.name}
                       size="small"
                       variant="outlined"
+                      className="blog-tag-chip"
                       sx={{
                         fontSize: '0.75rem',
                         '&:hover': {
@@ -605,7 +616,7 @@ const BlogDetail = () => {
             </Box>
 
             {/* Article Content */}
-            <Paper sx={{ 
+            <Paper className="blog-card-shadow" sx={{ 
               p: { xs: 3, md: 4 }, 
               mb: 6,
               borderRadius: 3,
@@ -621,21 +632,24 @@ const BlogDetail = () => {
                     fontWeight: 700,
                     mt: 4,
                     mb: 2,
-                    color: 'text.primary'
+                    color: 'text.primary',
+                    scrollMarginTop: '80px' // For smooth scroll offset
                   },
                   '& h3': {
                     fontSize: { xs: '1.25rem', md: '1.5rem' },
                     fontWeight: 600,
                     mt: 3,
                     mb: 1.5,
-                    color: 'text.primary'
+                    color: 'text.primary',
+                    scrollMarginTop: '80px'
                   },
                   '& h4': {
                     fontSize: { xs: '1.1rem', md: '1.25rem' },
                     fontWeight: 600,
                     mt: 2.5,
                     mb: 1,
-                    color: 'text.primary'
+                    color: 'text.primary',
+                    scrollMarginTop: '80px'
                   },
                   '& p': {
                     mb: 2
@@ -694,7 +708,7 @@ const BlogDetail = () => {
             </Paper>
 
             {/* Action Bar */}
-            <Box sx={{
+            <Box className="blog-card-shadow" sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -767,7 +781,7 @@ const BlogDetail = () => {
             </Box>
 
             {/* Author Bio */}
-            <Paper sx={{ 
+            <Paper className="blog-card-shadow" sx={{ 
               p: 4, 
               mb: 6,
               borderRadius: 3,
@@ -805,7 +819,7 @@ const BlogDetail = () => {
           {/* Table of Contents (Desktop) */}
           {tocItems.length > 0 && !isMobile && (
             <Grid item xs={12} lg={4}>
-              <Paper sx={{ 
+              <Paper className="blog-card-shadow" sx={{ 
                 p: 3, 
                 position: 'sticky',
                 top: 100,
@@ -868,7 +882,7 @@ const BlogDetail = () => {
                         e.preventDefault();
                         const element = document.getElementById(item.id);
                         if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
                       }}
                     >
@@ -909,7 +923,7 @@ const BlogDetail = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card sx={{
+                    <Card className="blog-card-shadow blog-card-hover" sx={{
                       height: '100%',
                       borderRadius: 3,
                       overflow: 'hidden',
@@ -935,6 +949,7 @@ const BlogDetail = () => {
                       <CardContent sx={{ flexGrow: 1, p: 3 }}>
                         <Typography 
                           variant="h6" 
+                          className="blog-title"
                           sx={{ 
                             mb: 1.5,
                             fontWeight: 600,

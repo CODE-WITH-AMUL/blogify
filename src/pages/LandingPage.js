@@ -21,13 +21,11 @@ import {
 import {
   ArrowForward as ArrowRightIcon,
   CalendarToday as CalendarIcon,
-  Person as UserIcon,
   Schedule as ClockIcon,
   Favorite as HeartIcon,
   KeyboardArrowRight as ChevronRightIcon,
   TrendingUp as TrendingUpIcon,
   Star as StarIcon,
-  Message as MessageIcon,
   Tag as TagIcon,
   MenuBook as MenuBookIcon,
   Computer as ComputerIcon,
