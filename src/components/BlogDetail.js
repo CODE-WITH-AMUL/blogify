@@ -71,7 +71,6 @@ const sanitizeHTML = (html) => {
   // FIXED: Add IDs to headings for TOC links (h2, h3, h4)
   const headings = tempDiv.querySelectorAll('h2, h3, h4');
   headings.forEach((heading, index) => {
-    const level = parseInt(heading.tagName.charAt(1));
     const id = `section-${index}`;
     heading.id = id;
   });

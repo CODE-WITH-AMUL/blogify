@@ -1,5 +1,5 @@
-// src/pages/LandingPage.js (Complete Fixed Code with Available Icons)
-import React, { useState, useEffect } from 'react';
+// src/pages/LandingPage.js (Complete Updated Code - All Warnings Fixed)
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -13,8 +13,6 @@ import {
   Container,
   Chip,
   Avatar,
-  useTheme,
-  useMediaQuery,
   CircularProgress,
   TextField
 } from '@mui/material';
@@ -43,8 +41,6 @@ import { Helmet } from 'react-helmet-async';
 import api from '../api/axiosInstance';
 
 const LandingPage = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [email, setEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState({
@@ -57,27 +53,10 @@ const LandingPage = () => {
   const [featuredPosts, setFeaturedPosts] = useState([]);
   const [recentPosts, setRecentPosts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [allTags, setAllTags] = useState([]);
   const [popularTags, setPopularTags] = useState([]);
   const [trendingPosts, setTrendingPosts] = useState([]);
 
-  const getPostsFromResponse = (response) => {
-    if (response && response.data) {
-      if (Array.isArray(response.data.results)) {
-        return response.data.results;
-      }
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-    }
-    return [];
-  };
-
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading({
         featured: true,
@@ -115,12 +94,6 @@ const LandingPage = () => {
         ).length
       }));
       setCategories(categoriesData);
-
-      // Extract tags from posts
-      const tagsData = [...new Set(recentPostsData.flatMap(post => 
-        (post.tags || []).map(tag => tag.name)
-      ))];
-      setAllTags(tagsData);
 
       // Calculate popular tags
       const tagCounts = {};
@@ -166,7 +139,11 @@ const LandingPage = () => {
         tags: false
       });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
   const getCategoryIcon = (category) => {
     const iconMap = {
@@ -205,6 +182,7 @@ const LandingPage = () => {
       if (searchResponse.data && Array.isArray(searchResponse.data)) {
         setRecentPosts(searchResponse.data);
       }
+      setSearchQuery('');  // Clear after search
     } catch (err) {
       console.error('Search error:', err);
     }
@@ -236,26 +214,26 @@ const LandingPage = () => {
     }
   };
 
-  // Mock fallback data
+  // Mock fallback data (updated dates to 2025)
   const getMockFeaturedPosts = () => [
     {
       id: 1,
-      title: "React 18 Concurrent Features Explained",
-      content: "Deep dive into the latest React 18 features including concurrent rendering, automatic batching, and transitions.",
+      title: "React 19 Concurrent Features Explained",
+      content: "Deep dive into the latest React 19 features including concurrent rendering, automatic batching, and transitions.",
       author: "Sarah Chen",
-      created_date: "2023-12-15",
+      created_date: "2025-12-05",
       views: 245,
       featured_image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800",
       categories: [{ name: "Technology" }],
       tags: [{name: "REACT"}, {name: "JAVASCRIPT"}, {name: "WEB DEV"}],
-      slug: "react-18-concurrent-features"
+      slug: "react-19-concurrent-features"
     },
     {
       id: 2,
-      title: "Python Django Best Practices 2024",
+      title: "Python Django Best Practices 2026",
       content: "Learn the most effective Django patterns for building scalable web applications.",
       author: "Alex Rivera",
-      created_date: "2023-12-10",
+      created_date: "2025-11-30",
       views: 189,
       featured_image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800",
       categories: [{ name: "Programming" }],
@@ -267,7 +245,7 @@ const LandingPage = () => {
       title: "Advanced JavaScript Patterns",
       content: "Master modern JavaScript patterns including closures, prototypes, and async programming.",
       author: "Michael Zhang",
-      created_date: "2023-12-05",
+      created_date: "2025-11-25",
       views: 312,
       featured_image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800",
       categories: [{ name: "Coding" }],
@@ -282,7 +260,7 @@ const LandingPage = () => {
       title: "Mastering State Management with Zustand",
       content: "A comprehensive guide to state management using Zustand for React applications.",
       author: "David Kim",
-      created_date: "2023-12-08",
+      created_date: "2025-12-02",
       views: 167,
       categories: [{ name: "Coding" }],
       tags: [{name: "REACT"}, {name: "STATE"}],
@@ -293,7 +271,7 @@ const LandingPage = () => {
       title: "Building REST APIs with Node.js",
       content: "Step-by-step guide to creating secure and scalable REST APIs using Node.js and Express.",
       author: "Jessica Park",
-      created_date: "2023-12-07",
+      created_date: "2025-12-01",
       views: 203,
       categories: [{ name: "Backend" }],
       tags: [{name: "NODEJS"}, {name: "API"}, {name: "EXPRESS"}],
@@ -304,7 +282,7 @@ const LandingPage = () => {
       title: "CSS Grid vs Flexbox: When to Use Which",
       content: "Detailed comparison between CSS Grid and Flexbox with practical examples.",
       author: "Chris Wilson",
-      created_date: "2023-12-06",
+      created_date: "2025-11-30",
       views: 145,
       categories: [{ name: "CSS" }],
       tags: [{name: "CSS"}, {name: "GRID"}, {name: "FLEXBOX"}],
@@ -315,7 +293,7 @@ const LandingPage = () => {
       title: "TypeScript for JavaScript Developers",
       content: "Transition smoothly from JavaScript to TypeScript with this comprehensive guide.",
       author: "Emma Davis",
-      created_date: "2023-12-05",
+      created_date: "2025-11-25",
       views: 178,
       categories: [{ name: "TypeScript" }],
       tags: [{name: "TYPESCRIPT"}, {name: "JAVASCRIPT"}],
@@ -354,7 +332,7 @@ const LandingPage = () => {
     },
     {
       id: 10,
-      title: "Web Performance Optimization Guide 2024",
+      title: "Web Performance Optimization Guide 2026",
       rank: 3,
       views: "10.5K",
       slug: "web-performance-optimization"
@@ -378,7 +356,7 @@ const LandingPage = () => {
     return `${minutes} min read`;
   };
 
-  // Safe array slicing function - FIXED THE BUG HERE
+  // Safe array slicing function
   const safeSlice = (array, start, end) => {
     if (!array || !Array.isArray(array)) return [];
     return array.slice(start, end);
@@ -472,6 +450,21 @@ const LandingPage = () => {
                     Expert tutorials on React, Python, Django, JavaScript, and full-stack development. 
                     Learn through real-world projects and industry best practices.
                   </Typography>
+
+                  {/* Integrated Search Form */}
+                  <Box sx={{ marginBottom: 4, maxWidth: 400 }}>
+                    <form onSubmit={handleSearch}>
+                      <TextField
+                        fullWidth
+                        placeholder="Search for React, Python, or more..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        aria-label="Search tutorials"
+                      />
+                    </form>
+                  </Box>
                   
                   <Box sx={{ 
                     display: 'flex', 
