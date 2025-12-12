@@ -1,4 +1,4 @@
-// src/pages/BlogDetail.js (Fixed Production Version)
+// src/pages/BlogDetail.js (Fixed - No DOMPurify dependency)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,7 +14,6 @@ import {
   Grid,
   Container,
   Avatar,
-  IconButton,
   Breadcrumbs,
   Paper,
   useTheme,
@@ -23,7 +22,8 @@ import {
   Alert,
   Card,
   CardMedia,
-  CardContent
+  CardContent,
+  IconButton
 } from '@mui/material';
 import {
   FacebookShareButton,
@@ -51,7 +51,38 @@ import {
   Share as ShareIcon
 } from '@mui/icons-material';
 import api from '../api/axiosInstance';
-import DOMPurify from 'dompurify'; // For safe HTML rendering
+
+// Simple HTML sanitizer function (remove if you install DOMPurify later)
+const sanitizeHTML = (html) => {
+  if (!html) return '';
+  
+  // Create a temporary div to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  // Remove potentially dangerous elements
+  const dangerousTags = ['script', 'iframe', 'embed', 'object', 'form'];
+  dangerousTags.forEach(tag => {
+    const elements = tempDiv.getElementsByTagName(tag);
+    Array.from(elements).forEach(el => el.remove());
+  });
+  
+  // Remove event handlers
+  const allElements = tempDiv.getElementsByTagName('*');
+  Array.from(allElements).forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      if (attr.name.startsWith('on')) {
+        el.removeAttribute(attr.name);
+      }
+      // Remove javascript: from href
+      if (attr.name === 'href' && attr.value.startsWith('javascript:')) {
+        el.removeAttribute('href');
+      }
+    });
+  });
+  
+  return tempDiv.innerHTML;
+};
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -77,7 +108,7 @@ const BlogDetail = () => {
       if (response.data) {
         setPost(response.data);
         
-        // Check if user has liked/bookmarked (replace with actual auth check)
+        // Check if user has liked/bookmarked
         const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
         const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
         
@@ -92,8 +123,10 @@ const BlogDetail = () => {
         setError('Blog post not found. It may have been removed or the URL is incorrect.');
       } else if (err.response?.status === 500) {
         setError('Server error. Please try again later.');
+      } else if (err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to server. Please check your internet connection.');
       } else {
-        setError('Failed to load the blog post. Please check your connection and try again.');
+        setError('Failed to load the blog post. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -113,9 +146,11 @@ const BlogDetail = () => {
       if (response.data && Array.isArray(response.data)) {
         // Filter by category if available
         if (post?.category) {
-          const related = response.data.filter(blog => 
-            blog.category === post.category && blog.id !== post.id
-          );
+          const related = response.data.filter(blog => {
+            const blogCategory = typeof blog.category === 'object' ? blog.category?.id : blog.category;
+            const postCategory = typeof post.category === 'object' ? post.category?.id : post.category;
+            return blogCategory === postCategory && blog.id !== post.id;
+          });
           setRelatedPosts(related.slice(0, 3));
         } else {
           setRelatedPosts(response.data.slice(0, 3));
@@ -123,7 +158,7 @@ const BlogDetail = () => {
       }
     } catch (err) {
       console.error('Error fetching related posts:', err);
-      // Silently fail for related posts - don't show error to user
+      // Silently fail for related posts
     }
   }, [post]);
 
@@ -154,12 +189,9 @@ const BlogDetail = () => {
         const level = parseInt(heading.tagName.charAt(1));
         const id = `section-${index}`;
         
-        // Add ID to heading for anchor links
-        heading.id = id;
-        
         return { 
           id, 
-          text: text.substring(0, 100), // Limit text length
+          text: text.substring(0, 100),
           level
         };
       });
@@ -178,16 +210,10 @@ const BlogDetail = () => {
         // Unlike
         const updatedLikes = savedLikes.filter(id => id !== post.id);
         localStorage.setItem('blog_likes', JSON.stringify(updatedLikes));
-        
-        // FIXED: Use correct API endpoint if available
-        // await api.delete(`/api/blogs/${post.id}/like/`);
       } else {
         // Like
         savedLikes.push(post.id);
         localStorage.setItem('blog_likes', JSON.stringify(savedLikes));
-        
-        // FIXED: Use correct API endpoint if available
-        // await api.post(`/api/blogs/${post.id}/like/`);
       }
       
       setIsLiked(!isLiked);
@@ -195,7 +221,7 @@ const BlogDetail = () => {
       // Update like count locally
       setPost(prev => ({
         ...prev,
-        likes_count: prev.likes_count + (isLiked ? -1 : 1)
+        likes_count: (prev.likes_count || 0) + (isLiked ? -1 : 1)
       }));
       
     } catch (err) {
@@ -212,16 +238,10 @@ const BlogDetail = () => {
         // Remove bookmark
         const updatedBookmarks = savedBookmarks.filter(id => id !== post.id);
         localStorage.setItem('blog_bookmarks', JSON.stringify(updatedBookmarks));
-        
-        // FIXED: Use correct API endpoint if available
-        // await api.delete(`/api/blogs/${post.id}/bookmark/`);
       } else {
         // Add bookmark
         savedBookmarks.push(post.id);
         localStorage.setItem('blog_bookmarks', JSON.stringify(savedBookmarks));
-        
-        // FIXED: Use correct API endpoint if available
-        // await api.post(`/api/blogs/${post.id}/bookmark/`);
       }
       
       setIsBookmarked(!isBookmarked);
@@ -236,8 +256,17 @@ const BlogDetail = () => {
     
     try {
       const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      
       return date.toLocaleDateString('en-US', {
-        month: 'long',
+        month: 'short',
         day: 'numeric',
         year: 'numeric'
       });
@@ -255,6 +284,9 @@ const BlogDetail = () => {
       const text = content.replace(/<[^>]*>/g, ' ');
       const words = text.split(/\s+/).filter(word => word.length > 0).length;
       const minutes = Math.ceil(words / 200);
+      
+      if (minutes === 0) return '< 1 min read';
+      if (minutes === 1) return '1 min read';
       return `${minutes} min read`;
     } catch (err) {
       return '5 min read';
@@ -305,7 +337,7 @@ const BlogDetail = () => {
             {error}
           </Typography>
         </Alert>
-        <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
           <Button 
             variant="contained" 
             onClick={() => navigate('/blog')}
@@ -316,10 +348,17 @@ const BlogDetail = () => {
           </Button>
           <Button 
             variant="outlined" 
-            onClick={() => fetchPost()}
+            onClick={fetchPost}
             size="large"
           >
             Try Again
+          </Button>
+          <Button 
+            variant="text" 
+            onClick={() => navigate('/')}
+            size="large"
+          >
+            Go Home
           </Button>
         </Box>
       </Container>
@@ -347,7 +386,7 @@ const BlogDetail = () => {
         <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', maxWidth: '600px' }}>
           The blog post you're looking for doesn't exist or has been moved.
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Button 
             variant="contained" 
             onClick={() => navigate('/blog')}
@@ -372,16 +411,7 @@ const BlogDetail = () => {
   const tocItems = generateTOC(post.content);
 
   // Sanitize HTML content
-  const sanitizedContent = DOMPurify.sanitize(post.content || '', {
-    ALLOWED_TAGS: [
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'p', 'br', 'strong', 'em', 'b', 'i', 'u',
-      'a', 'img', 'blockquote', 'code', 'pre',
-      'ul', 'ol', 'li', 'div', 'span',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td'
-    ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style']
-  });
+  const sanitizedContent = sanitizeHTML(post.content || '');
 
   return (
     <motion.div
@@ -412,10 +442,7 @@ const BlogDetail = () => {
               to="/" 
               style={{ 
                 textDecoration: 'none', 
-                color: 'inherit',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
+                color: 'inherit'
               }}
             >
               Home
@@ -424,10 +451,7 @@ const BlogDetail = () => {
               to="/blog" 
               style={{ 
                 textDecoration: 'none', 
-                color: 'inherit',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
+                color: 'inherit'
               }}
             >
               Blog
@@ -511,13 +535,13 @@ const BlogDetail = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                    {post.author || 'Anonymous Author'}
+                    {post.author || post.author_name || 'Anonymous Author'}
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 0.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <CalendarIcon sx={{ fontSize: 16 }} />
                       <Typography variant="body2">
-                        {formatDate(post.created_date || post.published_date)}
+                        {formatDate(post.published_date || post.created_date)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -526,10 +550,10 @@ const BlogDetail = () => {
                         {calculateReadTime(post.content)}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: '-flex', alignItems: 'center', gap: 0.5 }}>
                       <EyeIcon sx={{ fontSize: 16 }} />
                       <Typography variant="body2">
-                        {post.views || 0} views
+                        {(post.views || 0).toLocaleString()} views
                       </Typography>
                     </Box>
                   </Box>
@@ -540,24 +564,21 @@ const BlogDetail = () => {
             {/* Categories and Tags */}
             <Box sx={{ mb: 4 }}>
               {/* Categories */}
-              {post.categories && post.categories.length > 0 && (
+              {post.category && (
                 <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                   <CategoryIcon sx={{ fontSize: 18, mr: 1 }} />
-                  {post.categories.map(cat => (
-                    <Chip
-                      key={cat.id || cat}
-                      label={typeof cat === 'string' ? cat : cat.name}
-                      sx={{
-                        backgroundColor: 'primary.light',
-                        color: 'primary.contrastText',
-                        fontWeight: 600,
-                        '&:hover': {
-                          backgroundColor: 'primary.main'
-                        }
-                      }}
-                      size="small"
-                    />
-                  ))}
+                  <Chip
+                    label={typeof post.category === 'object' ? post.category.name : post.category}
+                    sx={{
+                      backgroundColor: 'primary.light',
+                      color: 'primary.contrastText',
+                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: 'primary.main'
+                      }
+                    }}
+                    size="small"
+                  />
                 </Box>
               )}
 
@@ -565,9 +586,9 @@ const BlogDetail = () => {
               {post.tags && post.tags.length > 0 && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                   <TagIcon sx={{ fontSize: 18, mr: 1 }} />
-                  {post.tags.map(tag => (
+                  {post.tags.map((tag, index) => (
                     <Chip
-                      key={tag.id || tag}
+                      key={index}
                       label={typeof tag === 'string' ? tag : tag.name}
                       size="small"
                       variant="outlined"
@@ -600,24 +621,21 @@ const BlogDetail = () => {
                     fontWeight: 700,
                     mt: 4,
                     mb: 2,
-                    color: 'text.primary',
-                    scrollMarginTop: '100px'
+                    color: 'text.primary'
                   },
                   '& h3': {
                     fontSize: { xs: '1.25rem', md: '1.5rem' },
                     fontWeight: 600,
                     mt: 3,
                     mb: 1.5,
-                    color: 'text.primary',
-                    scrollMarginTop: '100px'
+                    color: 'text.primary'
                   },
                   '& h4': {
                     fontSize: { xs: '1.1rem', md: '1.25rem' },
                     fontWeight: 600,
                     mt: 2.5,
                     mb: 1,
-                    color: 'text.primary',
-                    scrollMarginTop: '100px'
+                    color: 'text.primary'
                   },
                   '& p': {
                     mb: 2
@@ -633,7 +651,7 @@ const BlogDetail = () => {
                     backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
                     padding: '0.2rem 0.4rem',
                     borderRadius: '0.25rem',
-                    fontFamily: '"Roboto Mono", monospace',
+                    fontFamily: 'monospace',
                     fontSize: '0.9em'
                   },
                   '& pre': {
@@ -643,7 +661,7 @@ const BlogDetail = () => {
                     borderRadius: '0.5rem',
                     overflowX: 'auto',
                     mb: 2,
-                    fontFamily: '"Roboto Mono", monospace',
+                    fontFamily: 'monospace',
                     fontSize: '0.9rem'
                   },
                   '& blockquote': {
@@ -669,20 +687,6 @@ const BlogDetail = () => {
                   },
                   '& li': {
                     mb: 0.5
-                  },
-                  '& table': {
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    mb: 3
-                  },
-                  '& th, & td': {
-                    border: `1px solid ${theme.palette.divider}`,
-                    padding: '0.75rem',
-                    textAlign: 'left'
-                  },
-                  '& th': {
-                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
-                    fontWeight: 600
                   }
                 }}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
@@ -704,7 +708,7 @@ const BlogDetail = () => {
               borderColor: 'divider'
             }}>
               {/* Like and Bookmark */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   startIcon={isLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
@@ -734,23 +738,31 @@ const BlogDetail = () => {
               </Box>
 
               {/* Share */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 <ShareIcon sx={{ color: 'text.secondary', mr: 1 }} />
                 <Typography variant="body2" sx={{ color: 'text.secondary', mr: 2 }}>
                   Share:
                 </Typography>
-                <FacebookShareButton url={currentUrl} quote={post.title}>
-                  <FacebookIcon size={32} round />
-                </FacebookShareButton>
-                <TwitterShareButton url={currentUrl} title={post.title}>
-                  <TwitterIcon size={32} round />
-                </TwitterShareButton>
-                <LinkedinShareButton url={currentUrl} title={post.title}>
-                  <LinkedinIcon size={32} round />
-                </LinkedinShareButton>
-                <WhatsappShareButton url={currentUrl} title={post.title}>
-                  <WhatsappIcon size={32} round />
-                </WhatsappShareButton>
+                <IconButton size="small">
+                  <FacebookShareButton url={currentUrl} quote={post.title}>
+                    <FacebookIcon size={28} round />
+                  </FacebookShareButton>
+                </IconButton>
+                <IconButton size="small">
+                  <TwitterShareButton url={currentUrl} title={post.title}>
+                    <TwitterIcon size={28} round />
+                  </TwitterShareButton>
+                </IconButton>
+                <IconButton size="small">
+                  <LinkedinShareButton url={currentUrl} title={post.title}>
+                    <LinkedinIcon size={28} round />
+                  </LinkedinShareButton>
+                </IconButton>
+                <IconButton size="small">
+                  <WhatsappShareButton url={currentUrl} title={post.title}>
+                    <WhatsappIcon size={28} round />
+                  </WhatsappShareButton>
+                </IconButton>
               </Box>
             </Box>
 
@@ -773,18 +785,17 @@ const BlogDetail = () => {
                   bgcolor: 'primary.main',
                   fontSize: '2rem'
                 }}>
-                  {post.author?.charAt(0) || 'A'}
+                  {(post.author || post.author_name || 'A').charAt(0).toUpperCase()}
                 </Avatar>
                 <Box>
                   <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
-                    {post.author || 'Anonymous Author'}
+                    {post.author || post.author_name || 'Anonymous Author'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Senior Developer & Technical Writer
+                    {post.author_title || 'Senior Developer & Technical Writer'}
                   </Typography>
                   <Typography variant="body1" sx={{ lineHeight: 1.7 }}>
-                    Passionate about web development technologies and sharing knowledge with the community. 
-                    Specializes in Django, React, and modern web architecture.
+                    {post.author_bio || 'Passionate about web development technologies and sharing knowledge with the community. Specializes in modern web technologies and best practices.'}
                   </Typography>
                 </Box>
               </Box>
@@ -829,15 +840,12 @@ const BlogDetail = () => {
                   },
                   '&::-webkit-scrollbar-thumb': {
                     background: theme.palette.mode === 'dark' ? 'grey.600' : 'grey.400',
-                    borderRadius: '3px',
-                    '&:hover': {
-                      background: theme.palette.mode === 'dark' ? 'grey.500' : 'grey.500'
-                    }
+                    borderRadius: '3px'
                   }
                 }}>
                   {tocItems.map((item, index) => (
                     <ListItem 
-                      key={item.id} 
+                      key={index} 
                       component="a" 
                       href={`#${item.id}`}
                       sx={{ 
@@ -920,11 +928,7 @@ const BlogDetail = () => {
                           image={relatedPost.featured_image}
                           alt={relatedPost.title}
                           sx={{
-                            objectFit: 'cover',
-                            transition: 'transform 0.3s ease',
-                            '&:hover': {
-                              transform: 'scale(1.05)'
-                            }
+                            objectFit: 'cover'
                           }}
                         />
                       )}
@@ -956,7 +960,7 @@ const BlogDetail = () => {
                             height: '4.5em'
                           }}
                         >
-                          {relatedPost.excerpt || relatedPost.content?.substring(0, 120)}...
+                          {relatedPost.excerpt || relatedPost.content?.substring(0, 120)?.replace(/<[^>]*>/g, '') || 'No description available'}...
                         </Typography>
                         <Box sx={{ 
                           display: 'flex', 
@@ -965,16 +969,16 @@ const BlogDetail = () => {
                           mt: 'auto'
                         }}>
                           <Typography variant="caption" color="text.secondary">
-                            {formatDate(relatedPost.created_date)}
+                            {formatDate(relatedPost.published_date || relatedPost.created_date)}
                           </Typography>
                           <Button 
                             endIcon={<NavigateNextIcon />}
                             sx={{ 
                               color: 'primary.main', 
                               fontWeight: 600,
+                              textTransform: 'none',
                               '&:hover': {
-                                backgroundColor: 'transparent',
-                                color: 'primary.dark'
+                                backgroundColor: 'rgba(25, 118, 210, 0.04)'
                               }
                             }}
                             component={Link}
