@@ -1,5 +1,5 @@
-// src/pages/BlogDetail.js (Enhanced UI Version)
-import React, { useState, useEffect } from 'react';
+// src/pages/BlogDetail.js (Fixed Production Version)
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -20,7 +20,10 @@ import {
   useTheme,
   useMediaQuery,
   CircularProgress,
-  Alert
+  Alert,
+  Card,
+  CardMedia,
+  CardContent
 } from '@mui/material';
 import {
   FacebookShareButton,
@@ -34,19 +37,21 @@ import {
 } from 'react-share';
 import {
   CalendarToday as CalendarIcon,
-  Person as UserIcon,
   Schedule as ClockIcon,
   Favorite as FavoriteIcon,
-  Comment as CommentIcon,
   Visibility as EyeIcon,
   Bookmark as BookmarkIcon,
-  Share as ShareIcon,
   ArrowBack as ArrowBackIcon,
   NavigateNext as NavigateNextIcon,
   BookmarkBorder as BookmarkBorderIcon,
-  FavoriteBorder as FavoriteBorderIcon
+  FavoriteBorder as FavoriteBorderIcon,
+  Person as PersonIcon,
+  Category as CategoryIcon,
+  Tag as TagIcon,
+  Share as ShareIcon
 } from '@mui/icons-material';
 import api from '../api/axiosInstance';
+import DOMPurify from 'dompurify'; // For safe HTML rendering
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -59,162 +64,324 @@ const BlogDetail = () => {
   const [error, setError] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [viewsCount, setViewsCount] = useState(0);
 
-  useEffect(() => {
-    fetchPost();
-    fetchRelated();
-  }, [slug]);
-
-  const fetchPost = async () => {
+  // Fetch the blog post
+  const fetchPost = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/api/posts/${slug}/`);
-      setPost(response.data);
-      setLikesCount(response.data.likes || 0);
-      setViewsCount(response.data.views || 0);
-      // Simulate checking if post is bookmarked/liked (replace with actual API calls)
-      setIsBookmarked(Math.random() > 0.5);
-      setIsLiked(Math.random() > 0.5);
+      
+      // FIXED: Use correct API endpoint for blogs
+      const response = await api.get(`/api/blogs/${slug}/`);
+      
+      if (response.data) {
+        setPost(response.data);
+        
+        // Check if user has liked/bookmarked (replace with actual auth check)
+        const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
+        const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
+        
+        setIsLiked(savedLikes.includes(response.data.id));
+        setIsBookmarked(savedBookmarks.includes(response.data.id));
+      }
     } catch (err) {
-      console.error('Error fetching post:', err);
-      setError('Failed to load the article. Please try again.');
+      console.error('Error fetching blog post:', err);
+      
+      // Better error messages based on status code
+      if (err.response?.status === 404) {
+        setError('Blog post not found. It may have been removed or the URL is incorrect.');
+      } else if (err.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Failed to load the blog post. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
 
-  const fetchRelated = async () => {
+  // Fetch related posts
+  const fetchRelatedPosts = useCallback(async () => {
     try {
-      const response = await api.get('/api/posts/');
-      // Filter related posts by categories
-      if (post) {
-        const related = response.data
-          .filter(p => p.id !== post.id)
-          .filter(p => 
-            p.categories && 
-            post.categories && 
-            p.categories.some(cat => 
-              post.categories.some(postCat => postCat.id === cat.id)
-            )
-          )
-          .slice(0, 3);
-        setRelatedPosts(related);
-      } else {
-        setRelatedPosts(response.data.slice(0, 3));
+      const response = await api.get('/api/blogs/', {
+        params: {
+          limit: 3,
+          exclude: post?.id
+        }
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Filter by category if available
+        if (post?.category) {
+          const related = response.data.filter(blog => 
+            blog.category === post.category && blog.id !== post.id
+          );
+          setRelatedPosts(related.slice(0, 3));
+        } else {
+          setRelatedPosts(response.data.slice(0, 3));
+        }
       }
     } catch (err) {
       console.error('Error fetching related posts:', err);
+      // Silently fail for related posts - don't show error to user
     }
-  };
+  }, [post]);
 
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
+
+  useEffect(() => {
+    if (post) {
+      fetchRelatedPosts();
+    }
+  }, [post, fetchRelatedPosts]);
+
+  // Generate Table of Contents from HTML content
   const generateTOC = (content) => {
     if (!content) return [];
-    const headings = content.match(/<h[2-4][^>]*>(.*?)<\/h[2-4]>/g) || [];
-    return headings.map((h, i) => {
-      const text = h.replace(/<[^>]*>/g, '');
-      const level = h.match(/<h([2-4])/)[1];
-      return { 
-        id: `toc-${i}`, 
-        text: text,
-        level: parseInt(level)
-      };
-    });
+    
+    try {
+      // Create a temporary div to parse HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      // Find all headings (h2, h3, h4)
+      const headings = Array.from(tempDiv.querySelectorAll('h2, h3, h4'));
+      
+      return headings.map((heading, index) => {
+        const text = heading.textContent || '';
+        const level = parseInt(heading.tagName.charAt(1));
+        const id = `section-${index}`;
+        
+        // Add ID to heading for anchor links
+        heading.id = id;
+        
+        return { 
+          id, 
+          text: text.substring(0, 100), // Limit text length
+          level
+        };
+      });
+    } catch (err) {
+      console.error('Error generating TOC:', err);
+      return [];
+    }
   };
 
+  // Handle like action
   const handleLike = async () => {
     try {
+      const savedLikes = JSON.parse(localStorage.getItem('blog_likes') || '[]');
+      
       if (isLiked) {
-        setLikesCount(prev => prev - 1);
+        // Unlike
+        const updatedLikes = savedLikes.filter(id => id !== post.id);
+        localStorage.setItem('blog_likes', JSON.stringify(updatedLikes));
+        
+        // FIXED: Use correct API endpoint if available
+        // await api.delete(`/api/blogs/${post.id}/like/`);
       } else {
-        setLikesCount(prev => prev + 1);
+        // Like
+        savedLikes.push(post.id);
+        localStorage.setItem('blog_likes', JSON.stringify(savedLikes));
+        
+        // FIXED: Use correct API endpoint if available
+        // await api.post(`/api/blogs/${post.id}/like/`);
       }
+      
       setIsLiked(!isLiked);
-      await api.post(`/api/posts/${post.id}/like/`);
+      
+      // Update like count locally
+      setPost(prev => ({
+        ...prev,
+        likes_count: prev.likes_count + (isLiked ? -1 : 1)
+      }));
+      
     } catch (err) {
-      console.error('Error liking post:', err);
+      console.error('Error updating like:', err);
     }
   };
 
+  // Handle bookmark action
   const handleBookmark = async () => {
     try {
+      const savedBookmarks = JSON.parse(localStorage.getItem('blog_bookmarks') || '[]');
+      
+      if (isBookmarked) {
+        // Remove bookmark
+        const updatedBookmarks = savedBookmarks.filter(id => id !== post.id);
+        localStorage.setItem('blog_bookmarks', JSON.stringify(updatedBookmarks));
+        
+        // FIXED: Use correct API endpoint if available
+        // await api.delete(`/api/blogs/${post.id}/bookmark/`);
+      } else {
+        // Add bookmark
+        savedBookmarks.push(post.id);
+        localStorage.setItem('blog_bookmarks', JSON.stringify(savedBookmarks));
+        
+        // FIXED: Use correct API endpoint if available
+        // await api.post(`/api/blogs/${post.id}/bookmark/`);
+      }
+      
       setIsBookmarked(!isBookmarked);
-      await api.post(`/api/posts/${post.id}/bookmark/`);
     } catch (err) {
-      console.error('Error bookmarking post:', err);
+      console.error('Error updating bookmark:', err);
     }
   };
 
+  // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'Recent';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    if (!dateString) return 'Recently';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (err) {
+      return 'Recent';
+    }
   };
 
+  // Calculate read time
   const calculateReadTime = (content) => {
-    if (!content) return '5 min read';
-    const words = content.split(' ').length;
-    const minutes = Math.ceil(words / 200);
-    return `${minutes} min read`;
+    if (!content) return '3 min read';
+    
+    try {
+      // Strip HTML tags and count words
+      const text = content.replace(/<[^>]*>/g, ' ');
+      const words = text.split(/\s+/).filter(word => word.length > 0).length;
+      const minutes = Math.ceil(words / 200);
+      return `${minutes} min read`;
+    } catch (err) {
+      return '5 min read';
+    }
   };
 
+  // Get current URL for sharing
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
 
+  // Render loading state
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <CircularProgress size={60} />
+      <Container maxWidth="lg" sx={{ 
+        py: 8, 
+        textAlign: 'center',
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <CircularProgress size={60} thickness={4} />
         <Typography variant="h6" sx={{ mt: 3, color: 'text.secondary' }}>
-          Loading article...
+          Loading blog post...
         </Typography>
       </Container>
     );
   }
 
+  // Render error state
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-        <Button 
-          variant="contained" 
-          onClick={() => navigate('/blog')}
-          startIcon={<ArrowBackIcon />}
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            borderRadius: 2,
+            '& .MuiAlert-icon': {
+              fontSize: 30
+            }
+          }}
         >
-          Back to Articles
-        </Button>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Oops! Something went wrong
+          </Typography>
+          <Typography variant="body1">
+            {error}
+          </Typography>
+        </Alert>
+        <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+          <Button 
+            variant="contained" 
+            onClick={() => navigate('/blog')}
+            startIcon={<ArrowBackIcon />}
+            size="large"
+          >
+            Back to Blog
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={() => fetchPost()}
+            size="large"
+          >
+            Try Again
+          </Button>
+        </Box>
       </Container>
     );
   }
 
+  // Render not found state
   if (!post) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Article not found
+      <Container maxWidth="lg" sx={{ 
+        py: 8, 
+        textAlign: 'center',
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <Typography variant="h3" sx={{ mb: 3, color: 'text.primary', fontWeight: 700 }}>
+          404
         </Typography>
-        <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary' }}>
-          The article you're looking for doesn't exist or has been moved.
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Blog Post Not Found
         </Typography>
-        <Button 
-          variant="contained" 
-          onClick={() => navigate('/blog')}
-          startIcon={<ArrowBackIcon />}
-        >
-          Browse All Articles
-        </Button>
+        <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', maxWidth: '600px' }}>
+          The blog post you're looking for doesn't exist or has been moved.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button 
+            variant="contained" 
+            onClick={() => navigate('/blog')}
+            startIcon={<ArrowBackIcon />}
+            size="large"
+          >
+            Browse All Posts
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={() => navigate('/')}
+            size="large"
+          >
+            Go Home
+          </Button>
+        </Box>
       </Container>
     );
   }
 
+  // Generate TOC
   const tocItems = generateTOC(post.content);
+
+  // Sanitize HTML content
+  const sanitizedContent = DOMPurify.sanitize(post.content || '', {
+    ALLOWED_TAGS: [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'br', 'strong', 'em', 'b', 'i', 'u',
+      'a', 'img', 'blockquote', 'code', 'pre',
+      'ul', 'ol', 'li', 'div', 'span',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td'
+    ],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style']
+  });
 
   return (
     <motion.div
@@ -224,36 +391,67 @@ const BlogDetail = () => {
     >
       {/* Breadcrumb Navigation */}
       <Box sx={{ 
-        backgroundColor: '#f8fafc', 
+        backgroundColor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50', 
         py: 3,
-        borderBottom: '1px solid',
+        borderBottom: 1,
         borderColor: 'divider'
       }}>
         <Container maxWidth="lg">
-          <Breadcrumbs aria-label="breadcrumb" separator={<NavigateNextIcon fontSize="small" />}>
-            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Breadcrumbs 
+            aria-label="breadcrumb" 
+            separator={<NavigateNextIcon fontSize="small" />}
+            sx={{ 
+              '& .MuiBreadcrumbs-ol': {
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                whiteSpace: 'nowrap'
+              }
+            }}
+          >
+            <Link 
+              to="/" 
+              style={{ 
+                textDecoration: 'none', 
+                color: 'inherit',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              }}
+            >
               Home
             </Link>
-            <Link to="/blog" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link 
+              to="/blog" 
+              style={{ 
+                textDecoration: 'none', 
+                color: 'inherit',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              }}
+            >
               Blog
             </Link>
-            <Typography color="text.primary">{post.title}</Typography>
+            <Typography color="text.primary" noWrap>
+              {post.title.length > 30 ? post.title.substring(0, 30) + '...' : post.title}
+            </Typography>
           </Breadcrumbs>
         </Container>
       </Box>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Grid container spacing={6}>
+      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
+        <Grid container spacing={4}>
           {/* Article Content */}
-          <Grid item xs={12} lg={tocItems.length > 0 ? 8 : 9}>
+          <Grid item xs={12} lg={tocItems.length > 0 && !isMobile ? 8 : 12}>
             {/* Back Button */}
             <Button
               startIcon={<ArrowBackIcon />}
               onClick={() => navigate('/blog')}
               sx={{ mb: 4 }}
+              variant="text"
             >
-              Back to Articles
+              Back to Blog
             </Button>
 
             {/* Featured Image */}
@@ -263,14 +461,15 @@ const BlogDetail = () => {
                 borderRadius: 3,
                 overflow: 'hidden',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                position: 'relative'
+                position: 'relative',
+                height: { xs: '250px', md: '400px' }
               }}>
                 <motion.img
                   src={post.featured_image}
                   alt={post.title}
                   style={{
                     width: '100%',
-                    height: '400px',
+                    height: '100%',
                     objectFit: 'cover',
                     display: 'block'
                   }}
@@ -283,7 +482,7 @@ const BlogDetail = () => {
 
             {/* Title */}
             <Typography variant="h1" sx={{
-              fontSize: { xs: '2.5rem', md: '3.2rem' },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               fontWeight: 800,
               mb: 3,
               lineHeight: 1.2,
@@ -297,90 +496,96 @@ const BlogDetail = () => {
               display: 'flex',
               flexWrap: 'wrap',
               gap: 3,
-              mb: 5,
+              mb: 4,
               alignItems: 'center',
               color: 'text.secondary'
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
-                  {post.author?.charAt(0) || 'A'}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ 
+                  width: 48, 
+                  height: 48, 
+                  bgcolor: 'primary.main',
+                  fontSize: '1.2rem'
+                }}>
+                  <PersonIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {post.author || 'Anonymous'}
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                    {post.author || 'Anonymous Author'}
                   </Typography>
-                  <Typography variant="caption">
-                    Senior Developer
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <CalendarIcon sx={{ fontSize: 16 }} />
-                  <Typography variant="body2">
-                    {formatDate(post.created_date)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <ClockIcon sx={{ fontSize: 16 }} />
-                  <Typography variant="body2">
-                    {calculateReadTime(post.content)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <EyeIcon sx={{ fontSize: 16 }} />
-                  <Typography variant="body2">
-                    {viewsCount.toLocaleString()} views
-                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <CalendarIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="body2">
+                        {formatDate(post.created_date || post.published_date)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <ClockIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="body2">
+                        {calculateReadTime(post.content)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <EyeIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="body2">
+                        {post.views || 0} views
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Box>
             </Box>
 
-            {/* Categories */}
-            <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {post.categories?.map(cat => (
-                <Chip
-                  key={cat.id}
-                  label={cat.name}
-                  sx={{
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText',
-                    fontWeight: 600,
-                    '&:hover': {
-                      backgroundColor: 'primary.main'
-                    }
-                  }}
-                />
-              ))}
-            </Box>
+            {/* Categories and Tags */}
+            <Box sx={{ mb: 4 }}>
+              {/* Categories */}
+              {post.categories && post.categories.length > 0 && (
+                <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                  <CategoryIcon sx={{ fontSize: 18, mr: 1 }} />
+                  {post.categories.map(cat => (
+                    <Chip
+                      key={cat.id || cat}
+                      label={typeof cat === 'string' ? cat : cat.name}
+                      sx={{
+                        backgroundColor: 'primary.light',
+                        color: 'primary.contrastText',
+                        fontWeight: 600,
+                        '&:hover': {
+                          backgroundColor: 'primary.main'
+                        }
+                      }}
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              )}
 
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <Box sx={{ mb: 5, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ mr: 1, fontWeight: 600 }}>
-                  Tags:
-                </Typography>
-                {post.tags.map(tag => (
-                  <Chip
-                    key={tag.id || tag}
-                    label={typeof tag === 'string' ? tag : tag.name}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      fontSize: '0.75rem',
-                      '&:hover': {
-                        backgroundColor: 'action.hover'
-                      }
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                  <TagIcon sx={{ fontSize: 18, mr: 1 }} />
+                  {post.tags.map(tag => (
+                    <Chip
+                      key={tag.id || tag}
+                      label={typeof tag === 'string' ? tag : tag.name}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.75rem',
+                        '&:hover': {
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
 
             {/* Article Content */}
             <Paper sx={{ 
-              p: { xs: 3, md: 5 }, 
+              p: { xs: 3, md: 4 }, 
               mb: 6,
               borderRadius: 3,
               backgroundColor: 'background.paper'
@@ -388,21 +593,31 @@ const BlogDetail = () => {
               <Box
                 sx={{
                   lineHeight: 1.8,
-                  fontSize: '1.125rem',
+                  fontSize: { xs: '1rem', md: '1.125rem' },
                   color: 'text.primary',
                   '& h2': {
-                    fontSize: '2rem',
+                    fontSize: { xs: '1.5rem', md: '1.75rem' },
                     fontWeight: 700,
                     mt: 4,
                     mb: 2,
-                    color: 'text.primary'
+                    color: 'text.primary',
+                    scrollMarginTop: '100px'
                   },
                   '& h3': {
-                    fontSize: '1.5rem',
+                    fontSize: { xs: '1.25rem', md: '1.5rem' },
                     fontWeight: 600,
                     mt: 3,
                     mb: 1.5,
-                    color: 'text.primary'
+                    color: 'text.primary',
+                    scrollMarginTop: '100px'
+                  },
+                  '& h4': {
+                    fontSize: { xs: '1.1rem', md: '1.25rem' },
+                    fontWeight: 600,
+                    mt: 2.5,
+                    mb: 1,
+                    color: 'text.primary',
+                    scrollMarginTop: '100px'
                   },
                   '& p': {
                     mb: 2
@@ -415,20 +630,21 @@ const BlogDetail = () => {
                     }
                   },
                   '& code': {
-                    backgroundColor: '#f1f5f9',
+                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
                     padding: '0.2rem 0.4rem',
                     borderRadius: '0.25rem',
-                    fontFamily: '"Fira Code", monospace',
+                    fontFamily: '"Roboto Mono", monospace',
                     fontSize: '0.9em'
                   },
                   '& pre': {
-                    backgroundColor: '#1e293b',
-                    color: '#e2e8f0',
+                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                    color: theme.palette.mode === 'dark' ? 'grey.100' : 'grey.900',
                     padding: '1.5rem',
                     borderRadius: '0.5rem',
                     overflowX: 'auto',
                     mb: 2,
-                    fontFamily: '"Fira Code", monospace'
+                    fontFamily: '"Roboto Mono", monospace',
+                    fontSize: '0.9rem'
                   },
                   '& blockquote': {
                     borderLeft: '4px solid',
@@ -436,17 +652,40 @@ const BlogDetail = () => {
                     pl: 3,
                     py: 1,
                     my: 3,
-                    backgroundColor: 'action.hover',
-                    fontStyle: 'italic'
+                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50',
+                    fontStyle: 'italic',
+                    borderRadius: '0 0.5rem 0.5rem 0'
                   },
                   '& img': {
                     maxWidth: '100%',
                     height: 'auto',
                     borderRadius: '0.5rem',
-                    my: 3
+                    my: 3,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  },
+                  '& ul, & ol': {
+                    pl: 3,
+                    mb: 2
+                  },
+                  '& li': {
+                    mb: 0.5
+                  },
+                  '& table': {
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    mb: 3
+                  },
+                  '& th, & td': {
+                    border: `1px solid ${theme.palette.divider}`,
+                    padding: '0.75rem',
+                    textAlign: 'left'
+                  },
+                  '& th': {
+                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                    fontWeight: 600
                   }
                 }}
-                dangerouslySetInnerHTML={{ __html: post.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             </Paper>
 
@@ -472,16 +711,23 @@ const BlogDetail = () => {
                   onClick={handleLike}
                   sx={{
                     color: isLiked ? 'error.main' : 'text.secondary',
-                    borderColor: isLiked ? 'error.main' : 'divider'
+                    borderColor: isLiked ? 'error.main' : 'divider',
+                    '&:hover': {
+                      borderColor: isLiked ? 'error.dark' : 'text.primary'
+                    }
                   }}
                 >
-                  {isLiked ? 'Liked' : 'Like'} ({likesCount})
+                  {isLiked ? 'Liked' : 'Like'} ({post.likes_count || 0})
                 </Button>
                 
                 <Button
                   variant="outlined"
                   startIcon={isBookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
                   onClick={handleBookmark}
+                  sx={{
+                    color: isBookmarked ? 'primary.main' : 'text.secondary',
+                    borderColor: isBookmarked ? 'primary.main' : 'divider'
+                  }}
                 >
                   {isBookmarked ? 'Bookmarked' : 'Bookmark'}
                 </Button>
@@ -489,29 +735,22 @@ const BlogDetail = () => {
 
               {/* Share */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                <ShareIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', mr: 2 }}>
                   Share:
                 </Typography>
-                <IconButton>
-                  <FacebookShareButton url={currentUrl} quote={post.title}>
-                    <FacebookIcon size={28} round />
-                  </FacebookShareButton>
-                </IconButton>
-                <IconButton>
-                  <TwitterShareButton url={currentUrl} title={post.title}>
-                    <TwitterIcon size={28} round />
-                  </TwitterShareButton>
-                </IconButton>
-                <IconButton>
-                  <LinkedinShareButton url={currentUrl} title={post.title}>
-                    <LinkedinIcon size={28} round />
-                  </LinkedinShareButton>
-                </IconButton>
-                <IconButton>
-                  <WhatsappShareButton url={currentUrl} title={post.title}>
-                    <WhatsappIcon size={28} round />
-                  </WhatsappShareButton>
-                </IconButton>
+                <FacebookShareButton url={currentUrl} quote={post.title}>
+                  <FacebookIcon size={32} round />
+                </FacebookShareButton>
+                <TwitterShareButton url={currentUrl} title={post.title}>
+                  <TwitterIcon size={32} round />
+                </TwitterShareButton>
+                <LinkedinShareButton url={currentUrl} title={post.title}>
+                  <LinkedinIcon size={32} round />
+                </LinkedinShareButton>
+                <WhatsappShareButton url={currentUrl} title={post.title}>
+                  <WhatsappIcon size={32} round />
+                </WhatsappShareButton>
               </Box>
             </Box>
 
@@ -520,25 +759,35 @@ const BlogDetail = () => {
               p: 4, 
               mb: 6,
               borderRadius: 3,
-              backgroundColor: 'background.default'
+              backgroundColor: 'background.default',
+              border: '1px solid',
+              borderColor: 'divider'
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
-                <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main' }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+                About the Author
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <Avatar sx={{ 
+                  width: 80, 
+                  height: 80, 
+                  bgcolor: 'primary.main',
+                  fontSize: '2rem'
+                }}>
                   {post.author?.charAt(0) || 'A'}
                 </Avatar>
                 <Box>
-                  <Typography variant="h5" sx={{ mb: 1 }}>
-                    {post.author || 'Anonymous'}
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                    {post.author || 'Anonymous Author'}
                   </Typography>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Senior Developer & Technical Writer
+                  </Typography>
+                  <Typography variant="body1" sx={{ lineHeight: 1.7 }}>
+                    Passionate about web development technologies and sharing knowledge with the community. 
+                    Specializes in Django, React, and modern web architecture.
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="body1">
-                Passionate about sharing knowledge and helping developers grow. 
-                Specializes in modern web technologies and best practices.
-              </Typography>
             </Paper>
           </Grid>
 
@@ -550,24 +799,40 @@ const BlogDetail = () => {
                 position: 'sticky',
                 top: 100,
                 borderRadius: 3,
-                backgroundColor: 'background.paper'
+                backgroundColor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                maxHeight: 'calc(100vh - 140px)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
               }}>
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ 
+                  mb: 3, 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
                   📋 Table of Contents
                 </Typography>
                 <List sx={{ 
-                  maxHeight: '400px', 
+                  flex: 1,
                   overflow: 'auto',
+                  pr: 1,
                   '&::-webkit-scrollbar': {
                     width: '6px'
                   },
                   '&::-webkit-scrollbar-track': {
-                    background: '#f1f1f1',
+                    background: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
                     borderRadius: '3px'
                   },
                   '&::-webkit-scrollbar-thumb': {
-                    background: '#c1c1c1',
-                    borderRadius: '3px'
+                    background: theme.palette.mode === 'dark' ? 'grey.600' : 'grey.400',
+                    borderRadius: '3px',
+                    '&:hover': {
+                      background: theme.palette.mode === 'dark' ? 'grey.500' : 'grey.500'
+                    }
                   }
                 }}>
                   {tocItems.map((item, index) => (
@@ -576,22 +841,37 @@ const BlogDetail = () => {
                       component="a" 
                       href={`#${item.id}`}
                       sx={{ 
-                        pl: item.level * 2,
-                        py: 0.75,
+                        pl: item.level === 2 ? 2 : item.level === 3 ? 4 : 6,
+                        py: 1,
                         textDecoration: 'none',
                         color: 'text.secondary',
+                        borderLeft: '2px solid',
+                        borderColor: 'transparent',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
                           color: 'primary.main',
-                          backgroundColor: 'action.hover'
+                          backgroundColor: 'action.hover',
+                          borderColor: 'primary.main'
                         },
-                        borderRadius: 1
+                        borderRadius: '0 8px 8px 0',
+                        mb: 0.5
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = document.getElementById(item.id);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
                       }}
                     >
                       <ListItemText 
                         primary={item.text}
                         primaryTypographyProps={{
                           fontSize: '0.875rem',
-                          fontWeight: item.level === 2 ? 600 : 400
+                          fontWeight: item.level === 2 ? 600 : 400,
+                          noWrap: true,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}
                       />
                     </ListItem>
@@ -605,71 +885,106 @@ const BlogDetail = () => {
         {/* Related Articles */}
         {relatedPosts.length > 0 && (
           <Box sx={{ mt: 8 }}>
-            <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-              Related Articles
+            <Typography variant="h4" sx={{ 
+              mb: 4, 
+              fontWeight: 700,
+              fontSize: { xs: '1.75rem', md: '2rem' }
+            }}>
+              📚 Related Articles
             </Typography>
             <Divider sx={{ mb: 4 }} />
-            <Grid container spacing={4}>
+            <Grid container spacing={3}>
               {relatedPosts.map((relatedPost, index) => (
-                <Grid item xs={12} md={4} key={relatedPost.id}>
+                <Grid item xs={12} sm={6} md={4} key={relatedPost.id || index}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Link to={`/blog/${relatedPost.slug || relatedPost.id}`} style={{ textDecoration: 'none' }}>
-                      <Paper sx={{
-                        height: '100%',
-                        borderRadius: 3,
-                        overflow: 'hidden',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          boxShadow: '0 20px 40px rgba(0,0,0,0.12)'
-                        }
-                      }}>
-                        {relatedPost.featured_image && (
-                          <Box
-                            component="img"
-                            src={relatedPost.featured_image}
-                            alt={relatedPost.title}
-                            sx={{
-                              width: '100%',
-                              height: '200px',
-                              objectFit: 'cover'
-                            }}
-                          />
-                        )}
-                        <Box sx={{ p: 3 }}>
-                          <Typography variant="h6" sx={{ 
+                    <Card sx={{
+                      height: '100%',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.15)'
+                      }
+                    }}>
+                      {relatedPost.featured_image && (
+                        <CardMedia
+                          component="img"
+                          height="180"
+                          image={relatedPost.featured_image}
+                          alt={relatedPost.title}
+                          sx={{
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease',
+                            '&:hover': {
+                              transform: 'scale(1.05)'
+                            }
+                          }}
+                        />
+                      )}
+                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
                             mb: 1.5,
                             fontWeight: 600,
                             lineHeight: 1.4,
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}>
-                            {relatedPost.title}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{
+                            overflow: 'hidden',
+                            height: '3em'
+                          }}
+                        >
+                          {relatedPost.title}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          sx={{
                             mb: 2,
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}>
-                            {relatedPost.content?.substring(0, 120)}...
+                            overflow: 'hidden',
+                            height: '4.5em'
+                          }}
+                        >
+                          {relatedPost.excerpt || relatedPost.content?.substring(0, 120)}...
+                        </Typography>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          mt: 'auto'
+                        }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {formatDate(relatedPost.created_date)}
                           </Typography>
                           <Button 
                             endIcon={<NavigateNextIcon />}
-                            sx={{ color: 'primary.main', fontWeight: 600 }}
+                            sx={{ 
+                              color: 'primary.main', 
+                              fontWeight: 600,
+                              '&:hover': {
+                                backgroundColor: 'transparent',
+                                color: 'primary.dark'
+                              }
+                            }}
+                            component={Link}
+                            to={`/blog/${relatedPost.slug || relatedPost.id}`}
                           >
-                            Read Article
+                            Read
                           </Button>
                         </Box>
-                      </Paper>
-                    </Link>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 </Grid>
               ))}
